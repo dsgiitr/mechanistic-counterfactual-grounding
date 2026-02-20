@@ -1,0 +1,5 @@
+Target CI Width: 0.5 | Confidence: 95%
+---------------------------------------------
+Grounded Token stopped at m = 20 (Status: Target Reached)
+Uniform Token stopped at  m = 50 (Status: Target Reached)
+Hallucinated Token stopped at m = 80 (Status: Target Reached)
