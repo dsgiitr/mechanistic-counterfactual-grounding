@@ -2,6 +2,7 @@ import argparse
 import json
 import torch
 import os
+from tqdm import tqdm
 
 import sys
 project_root = os.path.dirname(os.path.abspath(__file__))
@@ -48,7 +49,7 @@ def evaluate_circuit(args):
     full_model_scores = []
     circuit_only_scores = []
     
-    for i, example in enumerate(dataset.hallucination_examples):
+    for i, example in tqdm(enumerate(dataset.hallucination_examples), total=len(dataset.hallucination_examples), desc="Evaluating circuit"):
         ans_pos = example["answer_position"]
         hall_id = example["hallucinated_token_id"]
         corr_id = example["correct_token_id"]

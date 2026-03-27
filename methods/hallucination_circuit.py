@@ -4,6 +4,7 @@ import math
 from transformers.models.llama.modeling_llama import apply_rotary_pos_emb
 from pyfunctions.cdt_core import normalize_rel_irrel
 from pyfunctions.wrappers import Node
+from tqdm import tqdm
 
 def prop_rmsnorm(rel, irrel, rmsnorm_module):
     tot = rel + irrel
@@ -179,7 +180,7 @@ def prop_LLaVA(dataset, example, ablated_nodes):
     ans_pos = example["answer_position"]
     mean_c = dataset.get_mean_correct(vis_pos, q_pos, ans_pos)
     
-    for i, layer_module in enumerate(model.layers):
+    for i, layer_module in enumerate(tqdm(model.layers, desc="Propagating layers", leave=False)):
         mean_c_layer = mean_c[i]
         rel, irrel = prop_llama_layer(
             rel, irrel, layer_module, full_mask, position_ids, i, ablated_nodes, mean_c_layer
@@ -203,7 +204,7 @@ def score_nodes(dataset, source_nodes, current_circuit):
     node_to_r_vis = {n: [] for n in source_nodes}
     node_to_r_q = {n: [] for n in source_nodes}
 
-    for idx, example in enumerate(dataset.hallucination_examples):
+    for idx, example in tqdm(enumerate(dataset.hallucination_examples), total=len(dataset.hallucination_examples), desc="Scoring examples"):
         # Step 3
         hall_id = example["hallucinated_token_id"]
         corr_id = example["correct_token_id"]
@@ -214,7 +215,7 @@ def score_nodes(dataset, source_nodes, current_circuit):
         vis_pos = example["visual_positions"]
         q_pos = example["question_positions"]
         
-        for node in source_nodes:
+        for node in tqdm(source_nodes, desc=f"Nodes (example {idx})", leave=False):
             # Ablate current_circuit + this candidate node
             ablated = current_circuit + [node]
             rel_h, irrel_h = prop_LLaVA(dataset, example, ablated)
@@ -269,7 +270,7 @@ def compute_faithfulness(dataset, circuit):
     m_c_sum = 0
     m_c_correct_sum = 0
     
-    for i, example in enumerate(dataset.hallucination_examples):
+    for i, example in tqdm(enumerate(dataset.hallucination_examples), total=len(dataset.hallucination_examples), desc="Computing faithfulness"):
         hall_id = example["hallucinated_token_id"]
         corr_id = example["correct_token_id"]
         

@@ -3,6 +3,7 @@ import torch
 import json
 import os
 from collections import defaultdict
+from tqdm import tqdm
 from datasets import load_dataset
 from PIL import Image
 
@@ -44,7 +45,7 @@ def store_mean_activations(args):
     
     print(f"Processing {total_samples} samples to compute mean activations...")
     
-    for i in range(total_samples):
+    for i in tqdm(range(total_samples), desc="Computing activations"):
         item = split_ds[i]
         
         img = item["image"]
@@ -83,8 +84,7 @@ def store_mean_activations(args):
                 question_sums[idx_q][l] += acts[l][0, seq_idx].to(torch.float32).to(args.device)
             question_counts[idx_q] += 1
             
-        if (i + 1) % 10 == 0:
-            print(f"Processed {i + 1} / {total_samples}...")
+
             
     print("Computing final means...")
     # Convert sums back to fp16 and divide by count

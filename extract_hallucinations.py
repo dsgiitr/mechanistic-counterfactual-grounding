@@ -4,6 +4,8 @@ import torch
 import warnings
 from transformers import pipeline
 from datasets import load_dataset
+from PIL import Image
+from tqdm import tqdm
 
 warnings.filterwarnings("ignore")
 
@@ -47,7 +49,7 @@ def extract_hallucination_data(
     batch_messages = []
     batch_indices = []
     
-    for i in range(len(split_ds)):
+    for i in tqdm(range(len(split_ds)), desc="Scanning dataset"):
         if len(hallucinations) >= max_samples:
             break
             
@@ -102,7 +104,6 @@ def extract_hallucination_data(
                     img_filename = f"hal_{len(hallucinations)}.jpg"
                     img_path = os.path.join(output_dir, img_filename)
                     if isinstance(image_b, str):
-                        from PIL import Image
                         image_b = Image.open(image_b)
                     image_b.convert('RGB').save(img_path)
                     

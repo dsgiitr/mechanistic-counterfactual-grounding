@@ -18,6 +18,7 @@ Identify exactly where the model hallucinated ("Yes" when Ground Truth is "No") 
 ```bash
 python extract_hallucinations.py \
     --max_samples 50 \
+    --batch_size 16 \
     --output_dir data/hallucinations \
     --dataset_name lmms-lab/POPE
 ```

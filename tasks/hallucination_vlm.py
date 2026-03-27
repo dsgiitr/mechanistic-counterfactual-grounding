@@ -1,6 +1,7 @@
 import torch
 from collections import defaultdict
 from PIL import Image
+from tqdm import tqdm
 
 class HallucinationDataset:
     """
@@ -44,7 +45,7 @@ class HallucinationDataset:
         
     def _process_dataset(self, data, is_correct_dataset=False):
         processed = []
-        for i, item in enumerate(data):
+        for i, item in tqdm(enumerate(data), total=len(data), desc="Processing examples"):
             img = self._load_image(item["image"])
             # Run a forward pass to acquire visual/question/answer sequence boundaries 
             # and (if evaluating correct examples) memory-copy the reference activations
@@ -85,7 +86,7 @@ class HallucinationDataset:
         self.question_means = defaultdict(list)
         self.answer_means = []
 
-        for item in self.correct_examples:
+        for item in tqdm(self.correct_examples, desc="Precomputing means"):
             acts = item["activations"] # layer -> (batch, seq, n_heads, d_head)
             vis_pos = item["visual_positions"]
             q_pos = item["question_positions"]
