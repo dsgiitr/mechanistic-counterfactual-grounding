@@ -2,9 +2,9 @@ import argparse
 import json
 import torch
 from pyfunctions.wrappers import Node
-from CD_Circuit.models.llava_wrapper import LlavaWrapper
-from CD_Circuit.tasks.hallucination_vlm import HallucinationDataset
-from CD_Circuit.methods.hallucination_circuit import score_nodes, compute_faithfulness
+from models.llava_wrapper import LlavaWrapper
+from tasks.hallucination_vlm import HallucinationDataset
+from methods.hallucination_circuit import score_nodes, compute_faithfulness
 
 def run_circuit_discovery(args):
     """
@@ -36,17 +36,15 @@ def run_circuit_discovery(args):
     # we can construct nodes for every combination of layer and head, across all positions.
     source_nodes = []
     
-    # Gather all maximum possible positions from hallucination examples
-    max_seq_len = max([ex["answer_position"] for ex in dataset.hallucination_examples]) + 1
-    
+    # HEAD-LEVEL DISCOVERY: Generate 1 node per attention head (32 x 32 = 1024 nodes)
+    # We use sequence_idx=-1 to indicate the entire sequence should be considered.
     for l in range(num_layers):
         for h in range(num_heads):
-            for seq in range(max_seq_len):
-                source_nodes.append(Node(layer_idx=l, sequence_idx=seq, attn_head_idx=h))
+            source_nodes.append(Node(layer_idx=l, sequence_idx=-1, attn_head_idx=h))
                 
     print(f"Generated {len(source_nodes)} source nodes to evaluate. Beginning scoring...")
     
-    scores = score_nodes(dataset, source_nodes, current_circuit=[])
+    scores = score_nodes(dataset, source_nodes, current_circuit=[], yes_no=args.yes_no, batch_size=args.batch_size)
     
     # Sort by combined score
     ranked_nodes = sorted(scores.items(), key=lambda x: x[1]["combined"], reverse=True)
@@ -69,6 +67,8 @@ def run_circuit_discovery(args):
             "seq_pos": node.sequence_idx,
             "label": label,
             "combined_score": s["combined"],
+            "r_avg": s["r_avg"],
+            "r_consistency": s["r_consistency"],
             "r_avg_visual": s["r_avg_visual"],
             "r_avg_question": s["r_avg_question"]
         })
@@ -81,7 +81,7 @@ def run_circuit_discovery(args):
     faithfulness = 0.0 # Placeholder for execution speed in testing
     
     result = {
-        "ranked_heads_top_100": [{"layer": n.layer_idx, "head": n.attn_head_idx, "seq": n.sequence_idx, "score": s["combined"]} for n, s in ranked_nodes[:100]],
+        "ranked_heads_top_100": [{"layer": n.layer_idx, "head": n.attn_head_idx, "seq": n.sequence_idx, "score": s["combined"], "r_avg": s["r_avg"]} for n, s in ranked_nodes[:100]],
         "circuit": circuit_details,
         "faithfulness": faithfulness
     }
@@ -101,6 +101,8 @@ if __name__ == "__main__":
     parser.add_argument("--top_percentile", type=float, default=95.0, help="Percentile threshold")
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--output", type=str, default="hallucination_circuit_results.json", help="Output file for circuit results")
+    parser.add_argument("--batch_size", type=int, default=32, help="Batch size for evaluating source nodes")
+    parser.add_argument("--yes_no", action="store_true", help="Use hardcoded Yes/No target direction d_i = W_U(Yes) - W_U(No)")
     
     args = parser.parse_args()
     

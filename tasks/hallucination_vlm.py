@@ -52,10 +52,16 @@ class HallucinationDataset:
             gen_token_id, logits, _ = self.wrapper.run_greedy(img, item["question"])
             
             # Populate token IDs if missing
-            if "hallucinated_token_id" not in item and "hallucinated_answer" in item:
-                item["hallucinated_token_id"] = self.wrapper.get_correct_token_id(item["hallucinated_answer"])
-            if "correct_token_id" not in item and "correct_answer" in item:
-                item["correct_token_id"] = self.wrapper.get_correct_token_id(item["correct_answer"])
+            # Support both naming conventions:
+            #   hallucinated_answer / correct_answer  (expected)
+            #   model_output / gt_output              (actual JSON from extract_hallucinations.py)
+            hall_answer = item.get("hallucinated_answer") or item.get("model_output")
+            corr_answer = item.get("correct_answer") or item.get("gt_output")
+            
+            if "hallucinated_token_id" not in item and hall_answer:
+                item["hallucinated_token_id"] = self.wrapper.get_correct_token_id(hall_answer)
+            if "correct_token_id" not in item and corr_answer:
+                item["correct_token_id"] = self.wrapper.get_correct_token_id(corr_answer)
                 
             item["image_loaded"] = img # cache loaded image
             item["visual_positions"] = self.wrapper.visual_positions.copy()

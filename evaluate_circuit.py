@@ -44,35 +44,57 @@ def evaluate_circuit(args):
     # To be safe, let's create non_circuit_nodes on the fly per example.
     
     faithfulness_ratios = []
-    
-    # For full model comparison (all nodes in circuit, meaning ablated_nodes = [])
     full_model_scores = []
     circuit_only_scores = []
     
+    # Precompute fixed direction for Yes/No tasks
+    if args.yes_no:
+        yes_id = wrapper.get_correct_token_id("Yes")
+        no_id = wrapper.get_correct_token_id("No")
+        raw_d = wrapper.W_U[yes_id] - wrapper.W_U[no_id]
+        fixed_d_i = raw_d / torch.norm(raw_d, p=2)
+        print(f"Yes/No mode: yes_id={yes_id}, no_id={no_id}")
+    
     for i, example in tqdm(enumerate(dataset.hallucination_examples), total=len(dataset.hallucination_examples), desc="Evaluating circuit"):
         ans_pos = example["answer_position"]
-        hall_id = example["hallucinated_token_id"]
-        corr_id = example["correct_token_id"]
+        vis_pos = example["visual_positions"]
+        q_pos = example["question_positions"]
         
-        # Target direction
-        raw_d_i = wrapper.W_U[hall_id] - wrapper.W_U[corr_id]
-        d_i = raw_d_i / torch.norm(raw_d_i, p=2) 
+        if args.yes_no:
+            d_i = fixed_d_i
+        else:
+            hall_id = example["hallucinated_token_id"]
+            corr_id = example["correct_token_id"]
+            raw_d_i = wrapper.W_U[hall_id] - wrapper.W_U[corr_id]
+            d_i = raw_d_i / torch.norm(raw_d_i, p=2)
+            
+        # Get embeddings ONCE for the example
+        mean_c = dataset.get_mean_correct(vis_pos, q_pos, ans_pos)
         
-        # 1. Run full model (0 ablated nodes)
-        rel_full, _ = prop_LLaVA(dataset, example, ablated_nodes=[])
+        prompt = wrapper.get_prompt(example["question"])
+        inputs = wrapper.processor(text=prompt, images=example["image_loaded"], return_tensors="pt")
+        if "pixel_values" in inputs:
+            inputs["pixel_values"] = inputs["pixel_values"].to(torch.float16)
+        inputs = {k: v.to(wrapper.device) if torch.is_tensor(v) else v for k, v in inputs.items()}
+        
+        with torch.no_grad():
+            outputs = wrapper.model(**inputs, output_hidden_states=True, return_dict=True)
+            base_embeds = outputs.hidden_states[0].to(torch.float16)
+        
+        # 1. Run full model (0 ablated nodes, batch size 1)
+        rel_full, _ = prop_LLaVA(dataset, [[]], base_embeds, mean_c)
         full_beta = torch.dot(d_i, rel_full[0, ans_pos, :]).item()
         full_model_scores.append(full_beta)
         
         # 2. Run circuit only (ablate everything NOT in circuit)
-        # Gather all nodes up to ans_pos
+        # In head-level tracing, seq_pos is -1.
         non_circuit_nodes = []
         for l in range(num_layers):
             for h in range(num_heads):
-                for seq in range(ans_pos + 1):
-                    if (l, h, seq) not in circuit_nodes:
-                        non_circuit_nodes.append(Node(layer_idx=l, sequence_idx=seq, attn_head_idx=h))
+                if (l, h, -1) not in circuit_nodes:
+                    non_circuit_nodes.append(Node(layer_idx=l, sequence_idx=-1, attn_head_idx=h))
                         
-        rel_C, _ = prop_LLaVA(dataset, example, ablated_nodes=non_circuit_nodes)
+        rel_C, _ = prop_LLaVA(dataset, [non_circuit_nodes], base_embeds, mean_c)
         C_beta = torch.dot(d_i, rel_C[0, ans_pos, :]).item()
         circuit_only_scores.append(C_beta)
         
@@ -110,6 +132,7 @@ if __name__ == "__main__":
     parser.add_argument("--mean_activations_path", type=str, required=True, help="Path to precomputed mean activations .pt file")
     parser.add_argument("--model_id", type=str, default="llava-hf/llava-1.5-7b-hf")
     parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument("--yes_no", action="store_true", help="Use hardcoded Yes/No target direction")
     
     args = parser.parse_args()
     torch.set_grad_enabled(False)
