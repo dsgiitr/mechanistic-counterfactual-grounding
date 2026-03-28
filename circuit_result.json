@@ -1,0 +1,713 @@
+{
+    "circuit": [
+        {
+            "layer": 6,
+            "head": 23,
+            "iteration": 0,
+            "target": "logits",
+            "combined_score": 24.6646785736084,
+            "mean_beta": -0.03684084117412567,
+            "label": "grounding suppressor"
+        },
+        {
+            "layer": 7,
+            "head": 1,
+            "iteration": 0,
+            "target": "logits",
+            "combined_score": 16.293445587158203,
+            "mean_beta": -0.04183788225054741,
+            "label": "grounding suppressor"
+        },
+        {
+            "layer": 29,
+            "head": 22,
+            "iteration": 0,
+            "target": "logits",
+            "combined_score": 12.508559226989746,
+            "mean_beta": 0.011056032031774521,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 6,
+            "head": 3,
+            "iteration": 0,
+            "target": "logits",
+            "combined_score": 12.143484115600586,
+            "mean_beta": -0.042291030287742615,
+            "label": "grounding suppressor"
+        },
+        {
+            "layer": 25,
+            "head": 2,
+            "iteration": 1,
+            "target": "L6H23, L7H1, L29H22, L6H3",
+            "combined_score": 329.1962585449219,
+            "mean_beta": 0.00021808742894791067,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 21,
+            "head": 6,
+            "iteration": 1,
+            "target": "L6H23, L7H1, L29H22, L6H3",
+            "combined_score": 130.74655151367188,
+            "mean_beta": 0.0005965399905107915,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 18,
+            "head": 31,
+            "iteration": 1,
+            "target": "L6H23, L7H1, L29H22, L6H3",
+            "combined_score": 102.83201599121094,
+            "mean_beta": 0.00061498285504058,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 21,
+            "head": 1,
+            "iteration": 1,
+            "target": "L6H23, L7H1, L29H22, L6H3",
+            "combined_score": 95.79019927978516,
+            "mean_beta": 0.000492556078825146,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 21,
+            "head": 26,
+            "iteration": 2,
+            "target": "L25H2, L21H6, L18H31, L21H1",
+            "combined_score": 194.5736083984375,
+            "mean_beta": 0.0001778185396688059,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 17,
+            "head": 18,
+            "iteration": 2,
+            "target": "L25H2, L21H6, L18H31, L21H1",
+            "combined_score": 115.53556060791016,
+            "mean_beta": 0.006837885535787791,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 7,
+            "head": 4,
+            "iteration": 2,
+            "target": "L25H2, L21H6, L18H31, L21H1",
+            "combined_score": 95.5360336303711,
+            "mean_beta": 0.004205193639791105,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 16,
+            "head": 16,
+            "iteration": 2,
+            "target": "L25H2, L21H6, L18H31, L21H1",
+            "combined_score": 91.119873046875,
+            "mean_beta": 0.018006398575380445,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 8,
+            "head": 18,
+            "iteration": 3,
+            "target": "L21H26, L17H18, L7H4, L16H16",
+            "combined_score": 194.2301788330078,
+            "mean_beta": 0.0014308905156212859,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 20,
+            "head": 2,
+            "iteration": 3,
+            "target": "L21H26, L17H18, L7H4, L16H16",
+            "combined_score": 179.88058471679688,
+            "mean_beta": 0.0004398381570354104,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 14,
+            "head": 17,
+            "iteration": 3,
+            "target": "L21H26, L17H18, L7H4, L16H16",
+            "combined_score": 115.41045379638672,
+            "mean_beta": 0.0035667038755491376,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 13,
+            "head": 9,
+            "iteration": 3,
+            "target": "L21H26, L17H18, L7H4, L16H16",
+            "combined_score": 56.80217742919922,
+            "mean_beta": 0.006840487825684249,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 14,
+            "head": 15,
+            "iteration": 4,
+            "target": "L8H18, L20H2, L14H17, L13H9",
+            "combined_score": 168.07127380371094,
+            "mean_beta": 0.0004773044493049383,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 13,
+            "head": 17,
+            "iteration": 4,
+            "target": "L8H18, L20H2, L14H17, L13H9",
+            "combined_score": 122.39363861083984,
+            "mean_beta": 0.00044954539043828845,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 4,
+            "head": 9,
+            "iteration": 4,
+            "target": "L8H18, L20H2, L14H17, L13H9",
+            "combined_score": 85.0473403930664,
+            "mean_beta": 0.00042978285455319565,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 8,
+            "head": 8,
+            "iteration": 4,
+            "target": "L8H18, L20H2, L14H17, L13H9",
+            "combined_score": 77.20685577392578,
+            "mean_beta": 0.002038675651419908,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 6,
+            "head": 13,
+            "iteration": 5,
+            "target": "L14H15, L13H17, L4H9, L8H8",
+            "combined_score": 18.547700881958008,
+            "mean_beta": 0.0014259302479331382,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 4,
+            "head": 18,
+            "iteration": 5,
+            "target": "L14H15, L13H17, L4H9, L8H8",
+            "combined_score": 12.992712020874023,
+            "mean_beta": 0.0006222068914212286,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 5,
+            "head": 23,
+            "iteration": 5,
+            "target": "L14H15, L13H17, L4H9, L8H8",
+            "combined_score": 11.77208423614502,
+            "mean_beta": 0.0006978631063248031,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 7,
+            "head": 5,
+            "iteration": 5,
+            "target": "L14H15, L13H17, L4H9, L8H8",
+            "combined_score": 8.260372161865234,
+            "mean_beta": 0.0012411510979291052,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 4,
+            "head": 7,
+            "iteration": 6,
+            "target": "L6H13, L4H18, L5H23, L7H5",
+            "combined_score": 37.38618850708008,
+            "mean_beta": 0.0006715225899824873,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 6,
+            "head": 18,
+            "iteration": 6,
+            "target": "L6H13, L4H18, L5H23, L7H5",
+            "combined_score": 33.070926666259766,
+            "mean_beta": 0.00010279774869559333,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 4,
+            "head": 29,
+            "iteration": 6,
+            "target": "L6H13, L4H18, L5H23, L7H5",
+            "combined_score": 6.972537994384766,
+            "mean_beta": 0.0008243346455856226,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 3,
+            "head": 11,
+            "iteration": 6,
+            "target": "L6H13, L4H18, L5H23, L7H5",
+            "combined_score": 6.0231733322143555,
+            "mean_beta": 0.0006830024449300254,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 3,
+            "head": 22,
+            "iteration": 7,
+            "target": "L4H7, L6H18, L4H29, L3H11",
+            "combined_score": 351.7148132324219,
+            "mean_beta": 0.0012374544312478974,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 5,
+            "head": 18,
+            "iteration": 7,
+            "target": "L4H7, L6H18, L4H29, L3H11",
+            "combined_score": 3.8642985820770264,
+            "mean_beta": 0.0016640889225527644,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 2,
+            "head": 23,
+            "iteration": 7,
+            "target": "L4H7, L6H18, L4H29, L3H11",
+            "combined_score": 1.8591903448104858,
+            "mean_beta": 0.0007654917062609456,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 3,
+            "head": 15,
+            "iteration": 7,
+            "target": "L4H7, L6H18, L4H29, L3H11",
+            "combined_score": 1.8570080995559692,
+            "mean_beta": 0.0011005056003341451,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 4,
+            "head": 22,
+            "iteration": 8,
+            "target": "L3H22, L5H18, L2H23, L3H15",
+            "combined_score": 0.44376707077026367,
+            "mean_beta": 0.0002657783043105155,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 2,
+            "head": 15,
+            "iteration": 8,
+            "target": "L3H22, L5H18, L2H23, L3H15",
+            "combined_score": 0.24648936092853546,
+            "mean_beta": 0.00013146042874723207,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 4,
+            "head": 17,
+            "iteration": 8,
+            "target": "L3H22, L5H18, L2H23, L3H15",
+            "combined_score": 0.1056753545999527,
+            "mean_beta": 0.0003049015940632671,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 3,
+            "head": 2,
+            "iteration": 8,
+            "target": "L3H22, L5H18, L2H23, L3H15",
+            "combined_score": 0.1029776856303215,
+            "mean_beta": 0.00011723279749276116,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 2,
+            "head": 12,
+            "iteration": 9,
+            "target": "L4H22, L2H15, L4H17, L3H2",
+            "combined_score": 8.035857200622559,
+            "mean_beta": 0.00030775188861298375,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 3,
+            "head": 18,
+            "iteration": 9,
+            "target": "L4H22, L2H15, L4H17, L3H2",
+            "combined_score": 0.7941381335258484,
+            "mean_beta": 0.0003387641772860661,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 2,
+            "head": 19,
+            "iteration": 9,
+            "target": "L4H22, L2H15, L4H17, L3H2",
+            "combined_score": 0.49080368876457214,
+            "mean_beta": 0.00020841479999944568,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 1,
+            "head": 16,
+            "iteration": 9,
+            "target": "L4H22, L2H15, L4H17, L3H2",
+            "combined_score": 0.4674846827983856,
+            "mean_beta": 7.008552620391129e-05,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 2,
+            "head": 1,
+            "iteration": 10,
+            "target": "L2H12, L3H18, L2H19, L1H16",
+            "combined_score": 0.1270580142736435,
+            "mean_beta": 7.274388917721808e-05,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 2,
+            "head": 13,
+            "iteration": 10,
+            "target": "L2H12, L3H18, L2H19, L1H16",
+            "combined_score": 0.06805599480867386,
+            "mean_beta": 5.215287092141807e-05,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 2,
+            "head": 25,
+            "iteration": 10,
+            "target": "L2H12, L3H18, L2H19, L1H16",
+            "combined_score": 0.06630954146385193,
+            "mean_beta": 8.353471639566123e-05,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 2,
+            "head": 0,
+            "iteration": 10,
+            "target": "L2H12, L3H18, L2H19, L1H16",
+            "combined_score": 0.06568457931280136,
+            "mean_beta": 5.858898293809034e-05,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 1,
+            "head": 24,
+            "iteration": 11,
+            "target": "L2H1, L2H13, L2H25, L2H0",
+            "combined_score": 0.04406947270035744,
+            "mean_beta": 8.161544565155054e-05,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 1,
+            "head": 28,
+            "iteration": 11,
+            "target": "L2H1, L2H13, L2H25, L2H0",
+            "combined_score": 0.03091546706855297,
+            "mean_beta": 5.327582493919181e-05,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 1,
+            "head": 15,
+            "iteration": 11,
+            "target": "L2H1, L2H13, L2H25, L2H0",
+            "combined_score": 0.026493467390537262,
+            "mean_beta": 6.899833624629537e-05,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 1,
+            "head": 11,
+            "iteration": 11,
+            "target": "L2H1, L2H13, L2H25, L2H0",
+            "combined_score": 0.025208450853824615,
+            "mean_beta": 6.078481646909495e-05,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 0,
+            "head": 25,
+            "iteration": 12,
+            "target": "L1H24, L1H28, L1H15, L1H11",
+            "combined_score": 0.016296902671456337,
+            "mean_beta": -4.61459239886608e-06,
+            "label": "grounding suppressor"
+        },
+        {
+            "layer": 0,
+            "head": 3,
+            "iteration": 12,
+            "target": "L1H24, L1H28, L1H15, L1H11",
+            "combined_score": 0.014596663415431976,
+            "mean_beta": -3.878236043419747e-05,
+            "label": "grounding suppressor"
+        },
+        {
+            "layer": 0,
+            "head": 15,
+            "iteration": 12,
+            "target": "L1H24, L1H28, L1H15, L1H11",
+            "combined_score": 0.01205291785299778,
+            "mean_beta": 4.3781995600511436e-05,
+            "label": "hallucination promoter"
+        },
+        {
+            "layer": 0,
+            "head": 29,
+            "iteration": 12,
+            "target": "L1H24, L1H28, L1H15, L1H11",
+            "combined_score": 0.010086171329021454,
+            "mean_beta": 3.9008855765132466e-05,
+            "label": "hallucination promoter"
+        }
+    ],
+    "iterations": [
+        [
+            {
+                "layer": 6,
+                "head": 23
+            },
+            {
+                "layer": 7,
+                "head": 1
+            },
+            {
+                "layer": 29,
+                "head": 22
+            },
+            {
+                "layer": 6,
+                "head": 3
+            }
+        ],
+        [
+            {
+                "layer": 25,
+                "head": 2
+            },
+            {
+                "layer": 21,
+                "head": 6
+            },
+            {
+                "layer": 18,
+                "head": 31
+            },
+            {
+                "layer": 21,
+                "head": 1
+            }
+        ],
+        [
+            {
+                "layer": 21,
+                "head": 26
+            },
+            {
+                "layer": 17,
+                "head": 18
+            },
+            {
+                "layer": 7,
+                "head": 4
+            },
+            {
+                "layer": 16,
+                "head": 16
+            }
+        ],
+        [
+            {
+                "layer": 8,
+                "head": 18
+            },
+            {
+                "layer": 20,
+                "head": 2
+            },
+            {
+                "layer": 14,
+                "head": 17
+            },
+            {
+                "layer": 13,
+                "head": 9
+            }
+        ],
+        [
+            {
+                "layer": 14,
+                "head": 15
+            },
+            {
+                "layer": 13,
+                "head": 17
+            },
+            {
+                "layer": 4,
+                "head": 9
+            },
+            {
+                "layer": 8,
+                "head": 8
+            }
+        ],
+        [
+            {
+                "layer": 6,
+                "head": 13
+            },
+            {
+                "layer": 4,
+                "head": 18
+            },
+            {
+                "layer": 5,
+                "head": 23
+            },
+            {
+                "layer": 7,
+                "head": 5
+            }
+        ],
+        [
+            {
+                "layer": 4,
+                "head": 7
+            },
+            {
+                "layer": 6,
+                "head": 18
+            },
+            {
+                "layer": 4,
+                "head": 29
+            },
+            {
+                "layer": 3,
+                "head": 11
+            }
+        ],
+        [
+            {
+                "layer": 3,
+                "head": 22
+            },
+            {
+                "layer": 5,
+                "head": 18
+            },
+            {
+                "layer": 2,
+                "head": 23
+            },
+            {
+                "layer": 3,
+                "head": 15
+            }
+        ],
+        [
+            {
+                "layer": 4,
+                "head": 22
+            },
+            {
+                "layer": 2,
+                "head": 15
+            },
+            {
+                "layer": 4,
+                "head": 17
+            },
+            {
+                "layer": 3,
+                "head": 2
+            }
+        ],
+        [
+            {
+                "layer": 2,
+                "head": 12
+            },
+            {
+                "layer": 3,
+                "head": 18
+            },
+            {
+                "layer": 2,
+                "head": 19
+            },
+            {
+                "layer": 1,
+                "head": 16
+            }
+        ],
+        [
+            {
+                "layer": 2,
+                "head": 1
+            },
+            {
+                "layer": 2,
+                "head": 13
+            },
+            {
+                "layer": 2,
+                "head": 25
+            },
+            {
+                "layer": 2,
+                "head": 0
+            }
+        ],
+        [
+            {
+                "layer": 1,
+                "head": 24
+            },
+            {
+                "layer": 1,
+                "head": 28
+            },
+            {
+                "layer": 1,
+                "head": 15
+            },
+            {
+                "layer": 1,
+                "head": 11
+            }
+        ],
+        [
+            {
+                "layer": 0,
+                "head": 25
+            },
+            {
+                "layer": 0,
+                "head": 3
+            },
+            {
+                "layer": 0,
+                "head": 15
+            },
+            {
+                "layer": 0,
+                "head": 29
+            }
+        ]
+    ],
+    "params": {
+        "num_outliers": 4,
+        "num_layers": 32,
+        "num_heads": 32
+    }
+}

@@ -31,7 +31,7 @@ def evaluate_circuit(args):
     # Extract circuit nodes
     circuit_nodes = set()
     for item in circuit_results.get("circuit", []):
-        circuit_nodes.add((item["layer"], item["head"], item["seq_pos"]))
+        circuit_nodes.add((item["layer"], item["head"], item.get("seq_pos", -1)))
         
     print(f"Loaded circuit with {len(circuit_nodes)} nodes.")
     

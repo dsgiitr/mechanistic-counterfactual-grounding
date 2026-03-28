@@ -122,6 +122,11 @@ def prop_llama_attention(rel, irrel, attention_mask, position_ids, attn_module,
                 irrel_context[b, n_head, n_seq, :] = mean_act
                 rel_context[b, n_head, n_seq, :] = current_act - mean_act
 
+    # Save per-head context BEFORE reshape for intermediate extraction
+    # Shape: (bsz, num_heads, q_len, head_dim)
+    rel_context_heads = rel_context.clone()
+    irrel_context_heads = irrel_context.clone()
+    
     # Reshape back
     rel_context = rel_context.transpose(1, 2).contiguous().view(bsz, q_len, hidden_size)
     irrel_context = irrel_context.transpose(1, 2).contiguous().view(bsz, q_len, hidden_size)
@@ -129,12 +134,12 @@ def prop_llama_attention(rel, irrel, attention_mask, position_ids, attn_module,
     # Output projection
     rel_out = torch.matmul(rel_context, attn_module.o_proj.weight.T)
     irrel_out = torch.matmul(irrel_context, attn_module.o_proj.weight.T)
-    return rel_out, irrel_out
+    return rel_out, irrel_out, rel_context_heads, irrel_context_heads
 
 def prop_llama_layer(rel, irrel, layer_module, attention_mask, position_ids, 
                      layer_idx, ablated_nodes, mean_c_layer, position_embeddings=None):
     rel_norm, irrel_norm = prop_rmsnorm(rel, irrel, layer_module.input_layernorm)
-    rel_attn, irrel_attn = prop_llama_attention(
+    rel_attn, irrel_attn, rel_ctx_heads, irrel_ctx_heads = prop_llama_attention(
         rel_norm, irrel_norm, attention_mask, position_ids, layer_module.self_attn, 
         layer_idx, ablated_nodes, mean_c_layer, position_embeddings=position_embeddings
     )
@@ -149,7 +154,7 @@ def prop_llama_layer(rel, irrel, layer_module, attention_mask, position_ids,
     rel_out = rel_mid + rel_mlp
     irrel_out = irrel_mid + irrel_mlp
     normalize_rel_irrel(rel_out, irrel_out)
-    return rel_out, irrel_out
+    return rel_out, irrel_out, rel_ctx_heads, irrel_ctx_heads
 
 def prop_LLaVA(dataset, ablated_batch, base_embeds, mean_c):
     """
@@ -190,13 +195,246 @@ def prop_LLaVA(dataset, ablated_batch, base_embeds, mean_c):
 
     for i, layer_module in enumerate(model.layers):
         mean_c_layer = mean_c[i]
-        rel, irrel = prop_llama_layer(
+        rel, irrel, _, _ = prop_llama_layer(
             rel, irrel, layer_module, full_mask, position_ids, i, ablated_batch, mean_c_layer,
             position_embeddings=position_embeddings
         )
         
     rel_final, irrel_final = prop_rmsnorm(rel, irrel, model.norm)
     return rel_final, irrel_final
+
+def prop_LLaVA_with_intermediates(dataset, ablated_batch, base_embeds, mean_c):
+    """
+    Same as prop_LLaVA, but additionally returns per-layer intermediate head decompositions.
+    Returns:
+        rel_final, irrel_final: final residual stream decomposition
+        intermediates: dict mapping layer_idx -> (rel_ctx_heads, irrel_ctx_heads)
+            each of shape (bsz, num_heads, seq_len, head_dim)
+    """
+    wrapper = dataset.wrapper
+    device = wrapper.device
+    if hasattr(wrapper.language_model, 'layers'):
+        model = wrapper.language_model
+    else:
+        model = wrapper.language_model.model
+        
+    bsz = len(ablated_batch)
+    seq_len = base_embeds.shape[1]
+    
+    embeds = base_embeds.expand(bsz, -1, -1)
+    
+    irrel = embeds.clone()
+    rel = torch.zeros_like(embeds)
+    
+    position_ids = torch.arange(seq_len, dtype=torch.long, device=device).unsqueeze(0)
+    
+    mask = torch.ones((1, 1, 1, seq_len), device=device, dtype=torch.float16)
+    mask = (1.0 - mask) * torch.finfo(torch.float16).min
+    causal_mask = torch.tril(torch.ones((seq_len, seq_len), device=device)).unsqueeze(0).unsqueeze(0)
+    causal_mask = (1.0 - causal_mask) * torch.finfo(torch.float16).min
+    full_mask = torch.maximum(mask, causal_mask.to(torch.float16))
+    
+    position_embeddings = None
+    if hasattr(model, "rotary_emb"):
+        position_embeddings = model.rotary_emb(base_embeds, position_ids)
+
+    intermediates = {}
+    for i, layer_module in enumerate(model.layers):
+        mean_c_layer = mean_c[i]
+        rel, irrel, rel_ctx_heads, irrel_ctx_heads = prop_llama_layer(
+            rel, irrel, layer_module, full_mask, position_ids, i, ablated_batch, mean_c_layer,
+            position_embeddings=position_embeddings
+        )
+        intermediates[i] = (rel_ctx_heads, irrel_ctx_heads)
+        
+    rel_final, irrel_final = prop_rmsnorm(rel, irrel, model.norm)
+    return rel_final, irrel_final, intermediates
+
+def build_adjacency_matrix(dataset, source_nodes, yes_no=False, batch_size=32):
+    """
+    Builds the full 1024x1024 adjacency matrix and 1024-dim logit vector.
+    
+    For each source node S (ablated), propagates through the entire network
+    and extracts:
+      - For every intermediate target head T at layer > S.layer:
+          beta_T = dot(rel_at_T, d_T) where d_T = clean_act_T - mean_act_T
+      - For the output logits:
+          beta_logit = dot(rel_final, d_logit) where d_logit = W_U[hall] - W_U[corr]
+    
+    Aggregates beta values across all dataset examples into:
+      r_avg, r_consistency, combined_score = r_avg * r_consistency
+    
+    Returns:
+        adj_combined: Tensor (N, N) of combined_score for head-to-head edges
+        adj_r_avg: Tensor (N, N) of r_avg
+        adj_r_consistency: Tensor (N, N) of r_consistency
+        adj_mean_beta: Tensor (N, N) of mean_beta (for sign labeling)
+        logit_scores: dict with keys 'combined', 'r_avg', 'r_consistency', 'mean_beta'
+            each a Tensor of shape (N,)
+    where N = num_layers * num_heads (1024 for LLaVA-7B).
+    """
+    wrapper = dataset.wrapper
+    num_layers = wrapper.num_layers
+    num_heads = wrapper.num_heads
+    N = num_layers * num_heads  # 1024
+    eps = 1e-8
+    
+    def node_to_idx(layer, head):
+        return layer * num_heads + head
+    
+    num_examples = len(dataset.hallucination_examples)
+    
+    # Accumulators: store per-example beta values for every (source, target) pair
+    # For head-to-head edges: (N_source, N_target, num_examples)
+    # For logit edges: (N_source, num_examples)
+    # We accumulate incrementally to avoid a massive 1024*1024*num_examples tensor
+    head_beta_sum = torch.zeros((N, N), dtype=torch.float64)
+    head_abs_beta_sum = torch.zeros((N, N), dtype=torch.float64)
+    head_r_sum = torch.zeros((N, N), dtype=torch.float64)
+    
+    logit_beta_sum = torch.zeros((N,), dtype=torch.float64)
+    logit_abs_beta_sum = torch.zeros((N,), dtype=torch.float64)
+    logit_r_sum = torch.zeros((N,), dtype=torch.float64)
+    
+    # Precompute fixed direction for Yes/No tasks
+    if yes_no:
+        yes_id = wrapper.get_correct_token_id("Yes")
+        no_id = wrapper.get_correct_token_id("No")
+        raw_d = wrapper.W_U[yes_id] - wrapper.W_U[no_id]
+        fixed_d_logit = raw_d / torch.norm(raw_d, p=2)
+        print(f"Yes/No mode: yes_id={yes_id}, no_id={no_id}")
+    
+    for ex_idx, example in tqdm(enumerate(dataset.hallucination_examples), 
+                                 total=num_examples, desc="Building adjacency matrix"):
+        # Logit direction for this example
+        if yes_no:
+            d_logit = fixed_d_logit
+        else:
+            hall_id = example["hallucinated_token_id"]
+            corr_id = example["correct_token_id"]
+            raw_d = wrapper.W_U[hall_id] - wrapper.W_U[corr_id]
+            d_logit = raw_d / torch.norm(raw_d, p=2)
+        
+        ans_pos = example["answer_position"]
+        vis_pos = example["visual_positions"]
+        q_pos = example["question_positions"]
+        
+        # Get mean activations and base embeddings
+        mean_c = dataset.get_mean_correct(vis_pos, q_pos, ans_pos)
+        
+        prompt = wrapper.get_prompt(example["question"])
+        inputs = wrapper.processor(text=prompt, images=example["image_loaded"], return_tensors="pt")
+        if "pixel_values" in inputs:
+            inputs["pixel_values"] = inputs["pixel_values"].to(torch.float16)
+        inputs = {k: v.to(wrapper.device) if torch.is_tensor(v) else v for k, v in inputs.items()}
+        
+        with torch.no_grad():
+            outputs = wrapper.model(**inputs, output_hidden_states=True, return_dict=True)
+            base_embeds = outputs.hidden_states[0].to(torch.float16)
+        
+        # Also run a clean forward pass to get the CLEAN activations for d_T directions.
+        # The wrapper hooks already captured them during the forward pass above.
+        clean_acts = {l: wrapper.activations[l].clone() for l in range(num_layers)}
+        # clean_acts[l] shape: (1, seq_len, num_heads, head_dim)
+        
+        # Compute d_T for every target head: d_T = clean_act - mean_act
+        # Shape per layer: (1, seq_len, num_heads, head_dim)
+        d_T_per_layer = {}
+        for l in range(num_layers):
+            # mean_c[l] shape: (1, seq_len, num_heads, head_dim)
+            d_T_per_layer[l] = clean_acts[l] - mean_c[l]
+        
+        # Batch over source nodes
+        for b_start in tqdm(range(0, len(source_nodes), batch_size), 
+                            desc=f"Batches (Ex {ex_idx})", leave=False):
+            batch_nodes = source_nodes[b_start : b_start + batch_size]
+            ablated_batch = [[node] for node in batch_nodes]
+            
+            # Run forward pass with intermediate extraction
+            rel_final, irrel_final, intermediates = prop_LLaVA_with_intermediates(
+                dataset, ablated_batch, base_embeds, mean_c
+            )
+            
+            cur_bsz = len(batch_nodes)
+            
+            for b_idx, src_node in enumerate(batch_nodes):
+                src_idx = node_to_idx(src_node.layer_idx, src_node.attn_head_idx)
+                
+                # --- Logit edge ---
+                rel_at_ans = rel_final[b_idx, ans_pos, :]
+                irrel_at_ans = irrel_final[b_idx, ans_pos, :]
+                beta_logit = torch.dot(d_logit, rel_at_ans).item()
+                gamma_logit = torch.dot(d_logit, irrel_at_ans).item()
+                r_logit = abs(beta_logit) / (abs(gamma_logit) + eps)
+                
+                logit_beta_sum[src_idx] += beta_logit
+                logit_abs_beta_sum[src_idx] += abs(beta_logit)
+                logit_r_sum[src_idx] += r_logit
+                
+                # --- Head-to-head edges ---
+                for tgt_layer in range(num_layers):
+                    # Enforce causality: target must be STRICTLY after source
+                    if tgt_layer <= src_node.layer_idx:
+                        continue
+                    
+                    # rel_ctx_heads shape: (bsz, num_heads, seq_len, head_dim)
+                    rel_ctx, irrel_ctx = intermediates[tgt_layer]
+                    # d_T shape: (1, seq_len, num_heads, head_dim)
+                    # Transpose d_T to (1, num_heads, seq_len, head_dim) to match
+                    d_T = d_T_per_layer[tgt_layer].permute(0, 2, 1, 3)
+                    
+                    for tgt_head in range(num_heads):
+                        tgt_idx = node_to_idx(tgt_layer, tgt_head)
+                        
+                        # Extract at answer position for this head
+                        rel_vec = rel_ctx[b_idx, tgt_head, ans_pos, :]
+                        irrel_vec = irrel_ctx[b_idx, tgt_head, ans_pos, :]
+                        d_vec = d_T[0, tgt_head, ans_pos, :]
+                        
+                        beta_h = torch.dot(d_vec, rel_vec).item()
+                        gamma_h = torch.dot(d_vec, irrel_vec).item()
+                        r_h = abs(beta_h) / (abs(gamma_h) + eps)
+                        
+                        head_beta_sum[src_idx, tgt_idx] += beta_h
+                        head_abs_beta_sum[src_idx, tgt_idx] += abs(beta_h)
+                        head_r_sum[src_idx, tgt_idx] += r_h
+    
+    # --- Aggregate across examples ---
+    # Head-to-head
+    head_r_avg = head_r_sum / max(num_examples, 1)
+    head_mean_beta = head_beta_sum / max(num_examples, 1)
+    head_mean_abs_beta = head_abs_beta_sum / max(num_examples, 1)
+    head_r_consistency = torch.abs(head_mean_beta) / (head_mean_abs_beta + eps)
+    head_combined = head_r_avg * head_r_consistency
+    
+    # Enforce causality mask: zero out invalid edges (L_target <= L_source)
+    for src in range(N):
+        src_layer = src // num_heads
+        for tgt in range(N):
+            tgt_layer = tgt // num_heads
+            if tgt_layer <= src_layer:
+                head_combined[src, tgt] = 0.0
+                head_r_avg[src, tgt] = 0.0
+                head_r_consistency[src, tgt] = 0.0
+                head_mean_beta[src, tgt] = 0.0
+    
+    # Logit scores
+    logit_r_avg = logit_r_sum / max(num_examples, 1)
+    logit_mean_beta = logit_beta_sum / max(num_examples, 1)
+    logit_mean_abs_beta = logit_abs_beta_sum / max(num_examples, 1)
+    logit_r_consistency = torch.abs(logit_mean_beta) / (logit_mean_abs_beta + eps)
+    logit_combined = logit_r_avg * logit_r_consistency
+    
+    return {
+        "head_combined": head_combined.float(),
+        "head_r_avg": head_r_avg.float(),
+        "head_r_consistency": head_r_consistency.float(),
+        "head_mean_beta": head_mean_beta.float(),
+        "logit_combined": logit_combined.float(),
+        "logit_r_avg": logit_r_avg.float(),
+        "logit_r_consistency": logit_r_consistency.float(),
+        "logit_mean_beta": logit_mean_beta.float(),
+    }
 
 def score_nodes(dataset, source_nodes, current_circuit, yes_no=False, batch_size=32):
     """

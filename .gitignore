@@ -163,7 +163,6 @@ cython_debug/
 data/
 edge-attribution-patching/
 output/
-models/
 notebooks/archive
 pyfunctions/archive
 .local/
