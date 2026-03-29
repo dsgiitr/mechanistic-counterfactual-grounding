@@ -1,0 +1,10 @@
+{
+  "example_1_skiing": {
+    "question": "Is there a snowboard present in the image?",
+    "prompt": "Please answer strictly with 'yes' or 'no'."
+  },
+  "example_2_cat": {
+    "question": "Is there a bed in this image?",
+    "prompt": "Please answer strictly with 'yes' or 'no'."
+  }
+}
