@@ -39,6 +39,42 @@ def move_inputs_to_device(inputs, device, model_dtype):
             moved[k] = v
     return moved
 
+
+def first_token_id(tokenizer, candidates):
+    """Return the first valid single-token id from candidate strings."""
+    for text in candidates:
+        ids = tokenizer.encode(text, add_special_tokens=False)
+        if len(ids) == 1:
+            return ids[0], text
+    raise RuntimeError(
+        "Could not find single-token encoding for candidates: " + ", ".join(candidates)
+    )
+
+
+def get_yes_no_token_ids(processor):
+    tokenizer = processor.tokenizer
+    yes_id, yes_text = first_token_id(tokenizer, [" yes", "Yes", "yes"])
+    no_id, no_text = first_token_id(tokenizer, [" no", "No", "no"])
+    print(
+        f"Using yes/no tokens: '{yes_text}' -> {yes_id}, '{no_text}' -> {no_id}"
+    )
+    return yes_id, no_id
+
+
+def forward_with_features_and_margin(model, inputs, features, yes_token_id, no_token_id):
+    with torch.no_grad():
+        features.clear()
+        outputs = model(**inputs)
+        feat_dict = {k: v.clone() for k, v in features.items()}
+
+        # Next-token logits at the assistant step.
+        last_logits = outputs.logits[:, -1, :]
+        yes_logit = float(last_logits[0, yes_token_id].detach().cpu().item())
+        no_logit = float(last_logits[0, no_token_id].detach().cpu().item())
+        margin = yes_logit - no_logit
+
+    return feat_dict, yes_logit, no_logit, margin
+
 def get_image_paths(base_dir, example_folder):
     """Dynamically finds the original and all counterfactual images in a folder."""
     folder_path = os.path.join(base_dir, example_folder)
@@ -113,6 +149,7 @@ def main():
     # Using bitsandbytes for 8-bit loading could save memory, but we keep it standard here.
     # User will run this over lightning later, potentially on multi-GPU.
     processor = AutoProcessor.from_pretrained(model_id)
+    yes_token_id, no_token_id = get_yes_no_token_ids(processor)
     model = LlavaForConditionalGeneration.from_pretrained(
         model_id, 
         device_map="auto", 
@@ -136,7 +173,10 @@ def main():
 
     # Output dir
     out_dir = os.path.abspath(os.path.join(script_dir, "..", "results", "vlm_deltas"))
+    behavior_dir = os.path.abspath(os.path.join(script_dir, "..", "results", "vlm_behavior"))
     os.makedirs(out_dir, exist_ok=True)
+    os.makedirs(behavior_dir, exist_ok=True)
+    behavior_records = []
     
     for example_folder, data in questions_data.items():
         print(f"\nProcessing {example_folder}...")
@@ -148,22 +188,26 @@ def main():
         orig_image = Image.open(original_img_path).convert("RGB")
         inputs_orig = processor(text=prompt, images=orig_image, return_tensors="pt")
         inputs_orig = move_inputs_to_device(inputs_orig, input_device, model_dtype)
-        
-        with torch.no_grad():
-            features.clear() # clear previous hook outputs
-            _ = model(**inputs_orig)
-            orig_features = {k: v.clone() for k, v in features.items()}
+        orig_features, orig_yes_logit, orig_no_logit, orig_margin = forward_with_features_and_margin(
+            model,
+            inputs_orig,
+            features,
+            yes_token_id,
+            no_token_id,
+        )
             
         # 2. Process Counterfactuals and compute Deltas
         for cf_idx, cf_path in enumerate(cf_img_paths):
             cf_image = Image.open(cf_path).convert("RGB")
             inputs_cf = processor(text=prompt, images=cf_image, return_tensors="pt")
             inputs_cf = move_inputs_to_device(inputs_cf, input_device, model_dtype)
-            
-            with torch.no_grad():
-                features.clear()
-                _ = model(**inputs_cf)
-                cf_features = {k: v.clone() for k, v in features.items()}
+            cf_features, cf_yes_logit, cf_no_logit, cf_margin = forward_with_features_and_margin(
+                model,
+                inputs_cf,
+                features,
+                yes_token_id,
+                no_token_id,
+            )
                 
             # Compute Deltas
             deltas = {}
@@ -172,9 +216,34 @@ def main():
                 deltas[layer_name] = delta_tensor
                 
             # Save Deltas
-            out_file = os.path.join(out_dir, f"{example_folder}_cf_{cf_idx}_deltas.pt")
+            delta_file_name = f"{example_folder}_cf_{cf_idx}_deltas.pt"
+            out_file = os.path.join(out_dir, delta_file_name)
             torch.save(deltas, out_file)
             print(f"Saved deltas to {out_file}")
+
+            # Save behavior record aligned with this delta file.
+            behavior_records.append(
+                {
+                    "delta_file": delta_file_name,
+                    "example": example_folder,
+                    "counterfactual_index": cf_idx,
+                    "question": data["question"],
+                    "prompt_constraint": data["prompt"],
+                    "orig_yes_logit": orig_yes_logit,
+                    "orig_no_logit": orig_no_logit,
+                    "orig_margin_yes_minus_no": orig_margin,
+                    "cf_yes_logit": cf_yes_logit,
+                    "cf_no_logit": cf_no_logit,
+                    "cf_margin_yes_minus_no": cf_margin,
+                    "margin_delta_cf_minus_orig": cf_margin - orig_margin,
+                }
+            )
+
+    behavior_jsonl = os.path.join(behavior_dir, "behavior_metrics.jsonl")
+    with open(behavior_jsonl, "w", encoding="utf-8") as f:
+        for rec in behavior_records:
+            f.write(json.dumps(rec) + "\n")
+    print(f"Saved behavior metrics to {behavior_jsonl}")
 
     # Remove hooks
     for handle in handles:
