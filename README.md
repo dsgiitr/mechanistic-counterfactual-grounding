@@ -83,13 +83,3 @@ python scripts/evaluate.py \
 | `cf_lr` | 0.01 | Learning rate for u optimization |
 | `alternate_every` | 1 | Alternate ERM/CRM every N steps |
 
-## Citation
-
-```bibtex
-@inproceedings{abbasnejad2020counterfactual,
-  title={Counterfactual Vision and Language Learning},
-  author={Abbasnejad, Ehsan and Teney, Damien and Parvaneh, Amin and Shi, Javen and van den Hengel, Anton},
-  booktitle={CVPR},
-  year={2020}
-}
-```
