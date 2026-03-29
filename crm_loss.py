@@ -24,13 +24,19 @@ class CRMLoss(nn.Module):
             reduction='none',
 
         ).mean(dim=-1)
+        
+
+        return (loss_per_sample*omega.detach()).mean()
 
 
-        weighted_loss=(loss_per_sample*omega).mean()
+    def compute_omega(
+        self,
+        logits:torch.Tensor,
+        logits_cf:torch.Tnesor,
+        answer_idx: torch.Tensor,
 
+    ) -> torch.Tensor:
 
-        loss_cf=F.cross_entropy(logits_cf,answer_idx)
-
-        total_loss=weighted_loss+self.lambda*loss_cf
-        return total_loss
-
+        with torch.no_grad():
+            log_p_factual=F.log_softmax(logits,dim=-1)
+            log_p_cf=F.log_softmax(logits_cf,dim=-1)
