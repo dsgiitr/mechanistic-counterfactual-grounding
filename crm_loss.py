@@ -40,3 +40,17 @@ class CRMLoss(nn.Module):
         with torch.no_grad():
             log_p_factual=F.log_softmax(logits,dim=-1)
             log_p_cf=F.log_softmax(logits_cf,dim=-1)
+
+            log_p_a_factual=log_p_factual.gather(
+                1,answer_idx.unsqueeze(1)
+           ).squeeze(1)
+
+           log_p_a_cf=log_p_cf.gather(
+            1,answer_idx.unsqueeze(1)
+           ).squeeze(1)
+
+
+           log_omega=log_p_a_factual-log_p_a_cf
+           omega=torch.exp(log_omega).clamp(max=self.clip_M)
+
+           return omega
