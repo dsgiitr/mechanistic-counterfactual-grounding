@@ -42,7 +42,11 @@ def find_circuit(adj, num_layers=32, num_heads=32, num_outliers=2):
         return layer * num_heads + head
     
     # --- Iteration 0: Find top K heads targeting logits ---
-    top_logit_indices = torch.argsort(logit_combined, descending=True)[:num_outliers]
+    # Only consider nodes that are hallucination promoters (beta > 0)
+    logit_scores_masked = logit_combined.clone()
+    logit_scores_masked[logit_mean_beta <= 0] = -1.0
+    
+    top_logit_indices = torch.argsort(logit_scores_masked, descending=True)[:num_outliers]
     
     circuit = []
     iterations = []
@@ -83,12 +87,17 @@ def find_circuit(adj, num_layers=32, num_heads=32, num_outliers=2):
         
         # For each candidate source node, sum its edge scores to ALL current target nodes
         aggregated_scores = torch.zeros(N)
+        aggregated_betas = torch.zeros(N)
         for tgt_idx in current_target_indices:
             aggregated_scores += head_combined[:, tgt_idx]
+            aggregated_betas += head_mean_beta[:, tgt_idx]
+            
+        # Mask out non-promoter nodes
+        aggregated_scores[aggregated_betas <= 0] = -1.0
         
         # Exclude nodes already in the circuit
         for node_key in seen:
-            aggregated_scores[node_to_idx(*node_key)] = 0.0
+            aggregated_scores[node_to_idx(*node_key)] = -1.0
         
         # Select top K
         top_indices = torch.argsort(aggregated_scores, descending=True)[:num_outliers]

@@ -9,6 +9,7 @@ Compute the background distributional mean activations across the evaluation spl
 python store_mean_activations.py \
     --dataset_name lmms-lab/POPE \
     --dataset_split test \
+    --max_samples 3000\
     --output_path data/mean_activations.pt
 ```
 
@@ -23,18 +24,22 @@ python extract_hallucinations.py \
     --dataset_name lmms-lab/POPE
 ```
 
-### Step 3: Trace the Hallucination Circuits
-Launch the Contextual Decomposition (CD-T) continuous tracing over the extracted hallucination samples. It strictly uses the computationally cheap offline means we cached.
+### Step 3 Make adjacency matrix
 
 ```bash
-python run_hallucination_circuit.py \
-    --dataset_path data/hallucinations/hallucinations.json \
+python run_adjacency_matrix.py \
+    --dataset_path data/hallucinations/hallucination_examples.json \
     --mean_activations_path data/mean_activations.pt \
-    --top_percentile 95.0 \
-    --output circuit_results.json
+    --batch_size 32 --yes_no \
+    --output adjacency_matrix.pt
 ```
 
-### Step 4: Evaluate Circuit Faithfulness
+### Step 4: Trace Circuit
+```bash
+python find_circuit_from_matrix.py --matrix_path adjacency_matrix.pt --num_outliers 2
+```
+
+### Step 5: Evaluate Circuit Faithfulness
 Compute the actual faithfulness metric by surgically ablating only the nodes `NOT` belonging to the mapped circuit and measuring how perfectly the original hallucination target logit recovers.
 
 ```bash
@@ -42,4 +47,9 @@ python evaluate_circuit.py \
     --circuit_path circuit_results.json \
     --eval_dataset data/hallucinations/hallucinations.json \
     --mean_activations_path data/mean_activations.pt
+```
+
+### Step 5: Visualize Circuit
+```bash
+python visualize_circuit.py --input circuit_result.json --output circuit_visualization.svg
 ```

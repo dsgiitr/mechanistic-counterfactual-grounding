@@ -81,24 +81,23 @@ def evaluate_circuit(args):
             outputs = wrapper.model(**inputs, output_hidden_states=True, return_dict=True)
             base_embeds = outputs.hidden_states[0].to(torch.float16)
         
-        # 1. Run full model (0 ablated nodes, batch size 1)
-        rel_full, _ = prop_LLaVA(dataset, [[]], base_embeds, mean_c)
+        # 1. To compute the Full Model's total variance from the mean, we put ALL nodes into the source list.
+        # This isolates the total network's (current_act - mean_act) into the `rel_full` stream.
+        all_nodes = [Node(layer_idx=l, sequence_idx=-1, attn_head_idx=h) for l in range(num_layers) for h in range(num_heads)]
+        rel_full, _ = prop_LLaVA(dataset, [all_nodes], base_embeds, mean_c)
         full_beta = torch.dot(d_i, rel_full[0, ans_pos, :]).item()
         full_model_scores.append(full_beta)
         
-        # 2. Run circuit only (ablate everything NOT in circuit)
-        # In head-level tracing, seq_pos is -1.
-        non_circuit_nodes = []
-        for l in range(num_layers):
-            for h in range(num_heads):
-                if (l, h, -1) not in circuit_nodes:
-                    non_circuit_nodes.append(Node(layer_idx=l, sequence_idx=-1, attn_head_idx=h))
+        # 2. To compute the Circuit's variance from the mean, we put ONLY the circuit nodes into the source list.
+        # This isolates the circuit's (current_act - mean_act) into the `rel_C` stream.
+        circuit_nodes_list = [Node(layer_idx=l, sequence_idx=-1, attn_head_idx=h) for (l, h, seq) in circuit_nodes]
                         
-        rel_C, _ = prop_LLaVA(dataset, [non_circuit_nodes], base_embeds, mean_c)
+        rel_C, _ = prop_LLaVA(dataset, [circuit_nodes_list], base_embeds, mean_c)
         C_beta = torch.dot(d_i, rel_C[0, ans_pos, :]).item()
         circuit_only_scores.append(C_beta)
         
-        ratio = C_beta / (full_beta + 1e-8)
+        # We cap division minimum to prevent explosion if full_beta is somehow 0
+        ratio = C_beta / (full_beta if abs(full_beta) > 1e-6 else 1e-6)
         faithfulness_ratios.append(ratio)
         
         print(f"Example {i}: Full Model Beta = {full_beta:.4f}, Circuit Beta = {C_beta:.4f}, Faithfulness = {ratio:.2%}")
