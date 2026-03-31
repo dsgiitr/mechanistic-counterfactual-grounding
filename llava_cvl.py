@@ -16,7 +16,7 @@ class VQAHead(nn.Module):
         super().__init__()
         self.classifier=nn.Sequential(
             nn.Linear(hidden_size,hidden_size //2),
-            nn.GeLU(),
+            nn.GELU(),
             nn.Dropout(dropout),
             nn.Linear(hidden_size //2, num_answers),
         )
@@ -65,8 +65,8 @@ class LLaVACVL(nn.Module):
     
 
         if freeze_vision_encoder:
-            for param in self.llava.vision_tower.parameters():
-                param.requires_grad(False)
+            for param in self.llava.model.vision_tower.parameters():
+                param.requires_grad_(False)
 
 
         if use_lora:
@@ -74,14 +74,14 @@ class LLaVACVL(nn.Module):
                 task_type=TaskType.FEATURE_EXTRACTION,
                 r=lora_r,
                 lora_alpha=lora_alpha,
-                lora_droppout=lora_dropout,
-                target_modules=lora_toarget_modules,
+                lora_dropout=lora_dropout,
+                target_modules=lora_target_modules,
                 bias='none',
 
             )
 
-            self.llava.language_model=get_peft_model(
-                self.llava.language_model,lora_config
+            self.llava.model.language_model=get_peft_model(
+                self.llava.model.language_model,lora_config
             )
 
         
@@ -99,7 +99,7 @@ class LLaVACVL(nn.Module):
             epsilon=epsilon,
             cf_grad_steps=cf_grad_steps,
             cf_lr=cf_lr,
-            lambda_cf=lmnda_cf,
+            lambda_cf=lambda_cf,
             clip_M=clip_M,
             intervene_vision=intervene_vision,
             intervene_language=intervene_language,
