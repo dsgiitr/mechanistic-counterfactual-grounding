@@ -1,101 +1,124 @@
 import os
+from typing import Dict, Optional
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from transformers import LlavaForConditionalGeneration ,LlavaProcessor
-from peft import get_peft_model ,LoraConfig,TaskType
-from typing import Dict,Optional,Tuple
+from peft import LoraConfig, TaskType, get_peft_model
+from transformers import BitsAndBytesConfig, LlavaForConditionalGeneration
 
-from exogenous_module import ExogenousVariableModule
 from counterfactual_gen import CounterFactualGenerator
+from exogenous_module import ExogenousVariableModule
 
 
 class VQAHead(nn.Module):
-    def __init__(self,hidden_size: int,num_answers: int, dropout: float =0.1):
+    def __init__(self, hidden_size: int, num_answers: int, dropout: float = 0.1):
         super().__init__()
-        self.classifier=nn.Sequential(
-            nn.Linear(hidden_size,hidden_size //2),
+        self.classifier = nn.Sequential(
+            nn.Linear(hidden_size, hidden_size // 2),
             nn.GELU(),
             nn.Dropout(dropout),
-            nn.Linear(hidden_size //2, num_answers),
+            nn.Linear(hidden_size // 2, num_answers),
         )
 
-    def forward(self,hidden: torch.Tensor) -> torch.Tensor:
+    def forward(self, hidden: torch.Tensor) -> torch.Tensor:
         return self.classifier(hidden)
-
 
 
 class LLaVACVL(nn.Module):
     def __init__(
         self,
-        llava_model_name: str= "llava-hf/llava-1.5-7b-hf",
-        num_answers: int=3129,
-        use_lora : bool=True,
-        lora_r : int=16,
-        lora_alpha : int=32,
-        lora_dropout: float=0.05,
+        llava_model_name: str = "llava-hf/llava-1.5-7b-hf",
+        num_answers: int = 3129,
+        use_lora: bool = True,
+        lora_r: int = 16,
+        lora_alpha: int = 32,
+        lora_dropout: float = 0.05,
         lora_target_modules=None,
-        freeze_vision_encoder: bool=True,
-
-        epsilon: float= 0.1,
-        cf_grad_steps: int=5,
-        cf_lr: float=0.01,
-        lambda_cf: float=0.5,
-        clip_M: float =10.0,
-        beta_alpha0: float=0.1,
-        beta_beta0: float=0.1,
-        intervene_vision: bool =True,
-        intervene_language: bool=True,
+        freeze_vision_encoder: bool = True,
+        load_in_4bit: bool = False,
+        bnb_4bit_quant_type: str = "nf4",
+        bnb_4bit_compute_dtype: str = "bfloat16",
+        bnb_4bit_use_double_quant: bool = True,
+        device_map: Optional[str] = None,
+        cache_dir: Optional[str] = None,
+        local_files_only: bool = False,
+        epsilon: float = 0.1,
+        cf_grad_steps: int = 5,
+        cf_lr: float = 0.01,
+        lambda_cf: float = 0.5,
+        clip_M: float = 10.0,
+        beta_alpha0: float = 0.1,
+        beta_beta0: float = 0.1,
+        intervene_vision: bool = True,
+        intervene_language: bool = True,
     ):
         super().__init__()
-
-        # Avoid hf-xet CAS download path issues in some hub/client versions.
         os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 
         if lora_target_modules is None:
-            lora_target_modules=['q_proj','v_proj','k_proj','o_proj']
+            lora_target_modules = ["q_proj", "v_proj", "k_proj", "o_proj"]
 
-        self.llava=LlavaForConditionalGeneration.from_pretrained(
+        compute_dtype = {
+            "float16": torch.float16,
+            "fp16": torch.float16,
+            "bfloat16": torch.bfloat16,
+            "bf16": torch.bfloat16,
+            "float32": torch.float32,
+            "fp32": torch.float32,
+        }.get(str(bnb_4bit_compute_dtype).lower(), torch.bfloat16)
+
+        model_kwargs = {
+            "low_cpu_mem_usage": True,
+            "device_map": device_map,
+            "cache_dir": cache_dir,
+            "local_files_only": local_files_only,
+        }
+        if load_in_4bit:
+            model_kwargs["quantization_config"] = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_quant_type=bnb_4bit_quant_type,
+                bnb_4bit_compute_dtype=compute_dtype,
+                bnb_4bit_use_double_quant=bnb_4bit_use_double_quant,
+            )
+        else:
+            model_kwargs["torch_dtype"] = torch.bfloat16
+
+        self.llava = LlavaForConditionalGeneration.from_pretrained(
             llava_model_name,
-            torch_dtype=torch.bfloat16,
-            low_cpu_mem_usage=True,
-
+            **model_kwargs,
         )
-    
+
+        # Reduce activation memory during backward.
+        self.llava.config.use_cache = False
+        self.llava.gradient_checkpointing_enable()
+        self.llava.enable_input_require_grads()
 
         if freeze_vision_encoder:
             for param in self.llava.model.vision_tower.parameters():
                 param.requires_grad_(False)
 
-
         if use_lora:
-            lora_config=LoraConfig(
+            lora_config = LoraConfig(
                 task_type=TaskType.FEATURE_EXTRACTION,
                 r=lora_r,
                 lora_alpha=lora_alpha,
                 lora_dropout=lora_dropout,
                 target_modules=lora_target_modules,
-                bias='none',
-
+                bias="none",
+            )
+            self.llava.model.language_model = get_peft_model(
+                self.llava.model.language_model,
+                lora_config,
             )
 
-            self.llava.model.language_model=get_peft_model(
-                self.llava.model.language_model,lora_config
-            )
-
-        
-        hidden_size=self.llava.config.text_config.hidden_size
-        self.vqa_head=VQAHead(hidden_size,num_answers)
-
-        self.exogenous_module=ExogenousVariableModule(
+        hidden_size = self.llava.config.text_config.hidden_size
+        self.vqa_head = VQAHead(hidden_size, num_answers)
+        self.exogenous_module = ExogenousVariableModule(
             alpha0=beta_alpha0,
             beta0=beta_beta0,
             epsilon=epsilon,
         )
-        
-
-        self.cf_generator=CounterFactualGenerator(
+        self.cf_generator = CounterFactualGenerator(
             epsilon=epsilon,
             cf_grad_steps=cf_grad_steps,
             cf_lr=cf_lr,
@@ -103,269 +126,95 @@ class LLaVACVL(nn.Module):
             clip_M=clip_M,
             intervene_vision=intervene_vision,
             intervene_language=intervene_language,
-
         )
+        self.clip_M = clip_M
 
-        self.clip_M=clip_M
-        self.num_answers=num_answers
-
-
-    def _etract_vsion_embeddings(
+    def _encode_and_pool(
         self,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
         pixel_values: torch.Tensor,
-
     ) -> torch.Tensor:
-
-
-        image_outputs=self.llava.vision_tower(
-            pixel_values,
+        outputs = self.llava(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            pixel_values=pixel_values,
             output_hidden_states=True,
-
+            return_dict=True,
         )
-
-        selected_image_feature=image_outputs.hidden_states[
-            self.llava.config.vision_feature_layer
-        ]
-
-
-        if self.llava.config.vision_feature_select_strategy=='default':
-            selected_image_feature=selected_image_feature[:,1:]
-        elif self.llava.config.vision_feature_select_strategy=='full':
-            selected_image_feature=selected_iamge_feature
-
-        
-        image_features=self.llava.multi_modal_projector(selected_image_feature)
-        return image_features
-
-
-def _extract_language_embeddings(
-    self,
-    input_ids: torch.Tensor,
-
-) -> torch.Tensor:
-
-
-    lm=self.llava.language_model
-    if hasaatr(lm,"base_model"):
-        embed_fn=lm.base_model.model.embed_tokens
-
-    else:
-        embed_fn=lm.model.embed_tokens
-
-    return embed_fn(input_ids)
-
-
-def _merge_embeddings_and_forward(
-    self,
-    image_features: torch.Tensor,
-    input_ids: torch.Tensor,
-    attention_mask: torch.Tensor,
-    text_embeds : Optional[torch.Tensor]=None,
-
-) -> torch.Tensor:
-
-
-
-    if text_embeds is None:
-        text_embeds=self.extract_language_embeddings(input_ids)
-
-    image_token_index=self.llava.config.image_toekn_index
-
-
-    mreged_embeds=self._merge_input_ids_with_image_features(
-        image_features,text_embeds,input_ids,image_token_index
-    )
-
-
-    lm=self.llava.languge_model
-    outputs=lm(
-        input_embeds=merged_embeds,
-        attention_mask=attention_mask,
-        output_hidden_states=False,
-        return_dict=True,
-    )
-
-
-
-    hidden_states=outputs.last_hidden_state
-
-    seq_legths=attention_mask.sum(dim=1)-1
-    batch_size=hidden_states.size(0)
-    last_hidde=hidden_state[
-        torch.arrange(batch_size,device=hidden_states.device),
-        seq_legths.clamp(0,hidden_states.size(1)-1)
-
-    ]
-
-    return last_hidden
-
-
-
-def _merge_input_ids_with_image_features(
-    self,
-    image_features:torch.Tensor,
-    input_embeds:torch.Tensor,
-    input_ids: torch.Tensor,
-    image_toekn_index: int,
-) -> torch.Tensor:
-
-    B,L,D= inputs_embeds.shape
-    num_patches=image_features.size(1)
-
-
-
-    merged_list=[]
-    for b in range(B):
-         ids=input_ids[b]
-         img_positions=(ids==image_token_index).nonzero(as_tuple=True)[0]
-
-         if len(img_positions)==0:
-
-            merged_list.append(inputs_embeds[b])
-            continue
-
-
-         pos=img_positions[0].item()
-         before=inputs_embed[b,:pos]
-         img_emb=image_features[b]
-         after=inputs_embeds[b,pos+1:]
-         merged_list.append(torch.cat([before,img_emb,after],dim=0))
-
-
-    max_len=max(t.size(0) for t in merged_list)
-    padded=inputs_embeds.new_zeros(B,max_len,D)
-    for b ,t in enumerate(merged_list):
-        padded[b,:t.size(0)]=t
-    return padded
-
-
-
-def factual_forward(
-    self,
-    input_ids: torch.Tensor,
-    attention_ask: torch.Tensor,
-    pixel_values: torch.Tensor,
-
-) -> Tuple[torch.Tensor,torch.Tensor,torch.Tensor]:
-
-
-
-
-    image_features=self._extract_vision_embeddings(pixel_values)
-    text_embeds=self._extract_language_embeddings(input_ids)
-
-    last_hidden=self._merge_embeddings_and_forward(
-        iamge_features,input_ids,attention_mask,text_embeds
-    )
-
-
-    logits=self.vqa_head(last_hidden)
-    return logits,image_features,tex_embeds
-
-
-def counterfactual_forward(
-    self,
-    input_ids:torch.Tensor,
-    attention_mask: torch.Tensor,
-    pixel_values: torch.Tensor,
-    answer_idx:torch.Tensor,
-    image_features: Optional[torch.Tensor]=None,
-    text_embeds: Optional[torch.Tensor]=None,
-    rand_iamge_features: Optional[torch.Tensor]=None,
-    rand_text_embeds: Optional[torch.Tensor]=None,
-
-)-> Tuple[torch.Tensor,torch.Tensor]:
-
-    B=input_ids.size(0)
-    deive=input_ids.device
-
-
-    if image_features is None:
-        image_features=self._extract_vision_embeddings(pixel_values)
-    if text_embeds is None:
-        text_embeds=self._extract_language_embeddings(input_ids)
-
-
-    if rand_image_features is None:
-        rand_idx=torch.roll(torch.arange(B),shifts=1)
-        rand_image_features=image_features[rand_idx].detach()
-
-    if rand_text_embeds is None:
-        rand_idx=torch.roll(torch.arange(B),shifts=1)
-        rand_text_embeds=text_embeds[rand_idx].detach()
-
-
-    e_v_pool=image_features.mean(dim=1)
-    e_q_pool=text_embeds.mean(dim=1)
-    e_v_rand_pool=rand_iamge_features.mean(dim=1)
-    e_q_rand_pool=rand_text_embeds.mean(dim=1)
-
-    u_v, u_q =self.exogenous_module(B,device)
-
-
-    def fusion_fn(e_v:torch.Tensor, e_q: torch.Tensor) -> otrch.Tensor:
-        fused=(e_v+e_q)/2.0
-
-
-
-
-    u_v_opt,u_q_opt=self.cf_generator.optimize_u_for_intervention(
-        e_v=e_v_pool,
-        e_q=e_q_pool,
-        e_v_rand=e_v_rand_pool,
-        e_q_rand=e_q_rand_pool,
-        u_v_init=u_v,
-        u_q_init=u_q,
-
-        answer_idx=answer_idx,
-        fusion_fn=fusion_fn,
-    )
-
-
-    u_v_seq=u_v_opt.view(B,1,1)
-    u_q_seq=u_q_opt.view(B,1,1)
-
-    threshold=1.0-self.cf_generator.epsilon
-
-    factual_v=(u_v_opt>=threshold).view(B,1,1).float()
-    factual_q=(u_q_opt>=threshold).view(B,1,1).float()
-
-    img_feat_cf=(
-        factual_v*image_feautres+(1.0-factual_v)*(u_v_seq*image_features+(1.0-u_v_seq)*rand_image_features)
-    )
-
-    text_emb=cf=(
-        factual_q*text_embeds+(1.0-factual_q)*(u_q_seq*text_embeds+(1.0-u_q_seq)*rand_text-embeds)
-    )
-
-
-
-    
-
-
-
-
-
-
-
-
-    
-
-
-
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        hidden_states = outputs.hidden_states[-1]
+        seq_lens = attention_mask.sum(dim=1) - 1
+        batch_indices = torch.arange(hidden_states.size(0), device=hidden_states.device)
+        seq_lens = seq_lens.clamp(min=0, max=hidden_states.size(1) - 1)
+        pooled = hidden_states[batch_indices, seq_lens]
+        return pooled
+
+    def _counterfactual_inputs(
+        self,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        pixel_values: torch.Tensor,
+        rand_input_ids: Optional[torch.Tensor],
+        rand_attention_mask: Optional[torch.Tensor],
+        rand_pixel_values: Optional[torch.Tensor],
+    ):
+        if rand_input_ids is None:
+            rand_input_ids = torch.roll(input_ids, shifts=1, dims=0)
+        if rand_attention_mask is None:
+            rand_attention_mask = torch.roll(attention_mask, shifts=1, dims=0)
+        if rand_pixel_values is None:
+            rand_pixel_values = torch.roll(pixel_values, shifts=1, dims=0)
+        return rand_input_ids, rand_attention_mask, rand_pixel_values
+
+    def forward(
+        self,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        pixel_values: torch.Tensor,
+        answer_idx: Optional[torch.Tensor] = None,
+        run_counterfactual: bool = False,
+        rand_input_ids: Optional[torch.Tensor] = None,
+        rand_attention_mask: Optional[torch.Tensor] = None,
+        rand_pixel_values: Optional[torch.Tensor] = None,
+    ) -> Dict[str, torch.Tensor]:
+        pooled = self._encode_and_pool(input_ids, attention_mask, pixel_values)
+        logits = self.vqa_head(pooled)
+
+        outputs: Dict[str, torch.Tensor] = {"logits": logits}
+
+        if not run_counterfactual:
+            return outputs
+
+        cf_input_ids, cf_attention_mask, cf_pixel_values = self._counterfactual_inputs(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            pixel_values=pixel_values,
+            rand_input_ids=rand_input_ids,
+            rand_attention_mask=rand_attention_mask,
+            rand_pixel_values=rand_pixel_values,
+        )
+        if cf_attention_mask.shape != cf_input_ids.shape:
+            pad_token_id = self.llava.config.pad_token_id
+            if pad_token_id is None:
+                cf_attention_mask = torch.ones_like(cf_input_ids)
+            else:
+                cf_attention_mask = (cf_input_ids != pad_token_id).long()
+        cf_pooled = self._encode_and_pool(
+            cf_input_ids,
+            cf_attention_mask,
+            cf_pixel_values,
+        )
+        logits_cf = self.vqa_head(cf_pooled)
+
+        if answer_idx is None:
+            omega = torch.ones(logits.size(0), device=logits.device, dtype=logits.dtype)
+        else:
+            log_p = torch.log_softmax(logits, dim=-1)
+            log_p_cf = torch.log_softmax(logits_cf, dim=-1)
+            log_pa = log_p.gather(1, answer_idx.unsqueeze(1)).squeeze(1)
+            log_pa_cf = log_p_cf.gather(1, answer_idx.unsqueeze(1)).squeeze(1)
+            omega = torch.exp(log_pa - log_pa_cf).clamp(max=self.clip_M)
+
+        outputs["logits_cf"] = logits_cf
+        outputs["omega"] = omega
+        return outputs

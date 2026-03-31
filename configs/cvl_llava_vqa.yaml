@@ -4,6 +4,12 @@
 model:
   # LLaVA model to use as backbone
   llava_model_name: "llava-hf/llava-1.5-7b-hf"
+  # Low-memory load mode for limited VRAM/RAM environments.
+  load_in_4bit: true
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_compute_dtype: "bfloat16"
+  bnb_4bit_use_double_quant: true
+  device_map: "auto"
   # Whether to use LoRA for efficient fine-tuning
   use_lora: true
   lora_r: 16
@@ -32,11 +38,20 @@ data:
   # Maximum number of answers to keep per question (soft labels)
   max_answers_per_question: 10
 
+cache:
+  # Shared Hugging Face cache for processor/model files.
+  hf_cache_dir: "./.cache/huggingface"
+  # Set true after first successful download to avoid network checks.
+  local_files_only: false
+  # Cache merged question/annotation samples as torch files.
+  dataset_cache_dir: "./.cache/datasets"
+  use_dataset_cache: true
+
 training:
   output_dir: "./outputs/cvl_llava"
   num_epochs: 20
-  batch_size: 4
-  gradient_accumulation_steps: 2
+  batch_size: 16
+  gradient_accumulation_steps: 8
   learning_rate: 2.0e-5
   weight_decay: 0.01
   warmup_ratio: 0.1
@@ -51,7 +66,7 @@ training:
   save_total_limit: 3
   # Seed
   seed: 42
-  dataloader_num_workers: 4
+  dataloader_num_workers: 2
 
 counterfactual:
   # Lambda: weight for the counterfactual risk term
@@ -75,7 +90,7 @@ counterfactual:
   intervene_vision: true
   intervene_language: true
   # Probability of applying counterfactual training to a batch
-  cf_prob: 1.0
+  cf_prob: 0.5
   # Whether to detach counterfactual computation from main graph
   # (saves memory at slight accuracy cost)
   detach_cf_embeddings: false
@@ -86,4 +101,4 @@ evaluation:
   # Evaluate on val split during training
   eval_during_training: true
   # Batch size for evaluation
-  eval_batch_size: 32
+  eval_batch_size: 1

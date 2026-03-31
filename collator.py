@@ -35,8 +35,9 @@ class VQACollator:
             text=questions,
             return_tensors="pt",
             padding=True,
-            truncation=True,
-            max_length=self.max_length,
+            # Do not truncate multimodal prompts; truncation can drop part of
+            # the image placeholder expansion and break token alignment.
+            truncation=False,
         )
 
         batch = {

@@ -32,6 +32,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Subset
 from torch.cuda.amp import GradScaler
 from transformers import get_scheduler
+from tqdm.auto import tqdm
 
 from llava_cvl import LLaVACVL
 from erm_loss import ERMLoss
@@ -145,7 +146,6 @@ class CVLTrainer:
         """
         indices = random.sample(range(len(self.train_dataset)), batch_size)
         samples = [self.train_dataset[i] for i in indices]
-        from data.collator import VQACollator
         # Re-use the same collator (processor is stored in the dataset's loader)
         # We access it through the dataloader's collate_fn
         collator = self.train_dataloader.collate_fn
@@ -185,6 +185,7 @@ class CVLTrainer:
                     answer_idx=answer_idx,
                     run_counterfactual=True,
                     rand_input_ids=rand_batch["input_ids"],
+                    rand_attention_mask=rand_batch["attention_mask"],
                     rand_pixel_values=rand_batch["pixel_values"],
                 )
 
@@ -266,7 +267,15 @@ class CVLTrainer:
         logger.info(f"Steps per epoch: {len(self.train_dataloader)}")
         logger.info(f"Total steps: {len(self.train_dataloader) * self.num_epochs}")
 
-        self.model.to(self.device)
+        has_device_map = (
+            hasattr(self.model, "llava")
+            and hasattr(self.model.llava, "hf_device_map")
+            and self.model.llava.hf_device_map is not None
+        )
+        if has_device_map:
+            logger.info("Detected device-mapped LLaVA model; skipping explicit model.to(device)")
+        else:
+            self.model.to(self.device)
         self.optimizer.zero_grad()
 
         for epoch in range(self.num_epochs):
@@ -274,7 +283,14 @@ class CVLTrainer:
             epoch_start = time.time()
             running_losses = {"erm": [], "crm": []}
 
-            for step, batch in enumerate(self.train_dataloader):
+            progress = tqdm(
+                enumerate(self.train_dataloader),
+                total=len(self.train_dataloader),
+                desc=f"Epoch {epoch + 1}/{self.num_epochs}",
+                leave=True,
+            )
+
+            for step, batch in progress:
                 step_info = self.train_step(batch)
 
                 loss_type = step_info["loss_type"]
@@ -284,6 +300,12 @@ class CVLTrainer:
                 if (step + 1) % self.grad_accum_steps == 0:
                     grad_norm = self.optimizer_step()
                     self.global_step += 1
+
+                    progress.set_postfix(
+                        loss=f"{step_info['loss']:.4f}",
+                        mode=step_info["loss_type"],
+                        step=self.global_step,
+                    )
 
                     # Logging
                     if self.global_step % self.logging_steps == 0:
@@ -350,7 +372,14 @@ class CVLTrainer:
         all_predictions = []
         all_targets = []
 
-        for batch in self.val_dataloader:
+        eval_progress = tqdm(
+            self.val_dataloader,
+            total=len(self.val_dataloader),
+            desc="Validation",
+            leave=False,
+        )
+
+        for batch in eval_progress:
             input_ids = batch["input_ids"].to(self.device)
             attention_mask = batch["attention_mask"].to(self.device)
             pixel_values = batch["pixel_values"].to(self.device)

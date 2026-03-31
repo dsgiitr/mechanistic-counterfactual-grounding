@@ -120,6 +120,8 @@ class VQADataset(Dataset):
         max_length: int = 512,
         image_size: int = 336,
         max_answers: int = 10,
+        cache_dir: Optional[str] = None,
+        use_cache: bool = True,
     ):
         self.data_dir = Path(data_dir)
         self.images_dir = Path(images_dir)
@@ -130,6 +132,9 @@ class VQADataset(Dataset):
         self.max_length = max_length
         self.image_size = image_size
         self.max_answers = max_answers
+        self.use_cache = use_cache
+        self.cache_dir = Path(cache_dir) if cache_dir else (self.data_dir / ".cache")
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Load questions and annotations
         q_file, a_file, self.img_dir_name = self.SPLITS[dataset_name][split]
@@ -140,6 +145,14 @@ class VQADataset(Dataset):
 
     def _load_samples(self, q_path: Path, a_path: Path) -> List[Dict]:
         """Merge questions and annotations into unified sample list."""
+        cache_file = (
+            self.cache_dir
+            / f"{self.dataset_name}_{self.split}_vocab{len(self.vocab)}_samples.pt"
+        )
+
+        if self.use_cache and cache_file.exists():
+            return torch.load(cache_file, map_location="cpu")
+
         with open(q_path) as f:
             q_data = json.load(f)
         with open(a_path) as f:
@@ -183,6 +196,9 @@ class VQADataset(Dataset):
                 "answer_idx": answer_idx,
                 "raw_answers": raw_answers,
             })
+
+        if self.use_cache:
+            torch.save(samples, cache_file)
 
         return samples
 

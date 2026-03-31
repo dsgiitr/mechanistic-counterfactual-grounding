@@ -27,6 +27,9 @@ import numpy as np
 import torch
 import yaml
 
+# Reduce fragmentation-related CUDA OOMs on long-running jobs.
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
 # Avoid hf-xet CAS transfer issues during model/processor downloads.
 os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 
@@ -36,7 +39,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from transformers import LlavaProcessor
 
 from llava_cvl import LLaVACVL
-from data.vqa_dataset import VQADataset, AnswerVocabulary
+from vqa_dataset import VQADataset, AnswerVocabulary
 from collator import VQACollator, build_dataloader
 from trainer import CVLTrainer
 from utils.logging_utils import setup_logging
@@ -127,6 +130,15 @@ def main():
     if args.output_dir:
         config["training"]["output_dir"] = args.output_dir
 
+    cache_cfg = config.get("cache", {})
+    hf_cache_dir = cache_cfg.get("hf_cache_dir", "./.cache/huggingface")
+    local_files_only = bool(cache_cfg.get("local_files_only", False))
+    dataset_cache_dir = cache_cfg.get("dataset_cache_dir", "./.cache/datasets")
+    use_dataset_cache = bool(cache_cfg.get("use_dataset_cache", True))
+
+    os.makedirs(hf_cache_dir, exist_ok=True)
+    os.makedirs(dataset_cache_dir, exist_ok=True)
+
     output_dir = config["training"]["output_dir"]
     setup_logging(output_dir)
 
@@ -138,7 +150,11 @@ def main():
     # ── Processor ─────────────────────────────────────────────────────────
     model_name = config["model"]["llava_model_name"]
     logger.info(f"Loading LLaVA processor: {model_name}")
-    processor = LlavaProcessor.from_pretrained(model_name)
+    processor = LlavaProcessor.from_pretrained(
+        model_name,
+        cache_dir=hf_cache_dir,
+        local_files_only=local_files_only,
+    )
 
     # ── Answer Vocabulary ──────────────────────────────────────────────────
     dataset_name = config["data"]["dataset_name"]
@@ -158,6 +174,8 @@ def main():
         processor=processor,
         max_length=config["model"]["max_length"],
         image_size=config["data"]["image_size"],
+        cache_dir=dataset_cache_dir,
+        use_cache=use_dataset_cache,
     )
     val_dataset = VQADataset(
         data_dir=data_dir,
@@ -168,6 +186,8 @@ def main():
         processor=processor,
         max_length=config["model"]["max_length"],
         image_size=config["data"]["image_size"],
+        cache_dir=dataset_cache_dir,
+        use_cache=use_dataset_cache,
     )
 
     if args.debug:
@@ -208,6 +228,13 @@ def main():
         lora_dropout=mcfg["lora_dropout"],
         lora_target_modules=mcfg["lora_target_modules"],
         freeze_vision_encoder=mcfg["freeze_vision_encoder"],
+        load_in_4bit=mcfg.get("load_in_4bit", False),
+        bnb_4bit_quant_type=mcfg.get("bnb_4bit_quant_type", "nf4"),
+        bnb_4bit_compute_dtype=mcfg.get("bnb_4bit_compute_dtype", "bfloat16"),
+        bnb_4bit_use_double_quant=mcfg.get("bnb_4bit_use_double_quant", True),
+        device_map=mcfg.get("device_map"),
+        cache_dir=hf_cache_dir,
+        local_files_only=local_files_only,
         epsilon=cfcfg["epsilon"],
         cf_grad_steps=cfcfg["cf_grad_steps"],
         cf_lr=cfcfg["cf_lr"],

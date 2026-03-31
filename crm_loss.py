@@ -14,7 +14,7 @@ class CRMLoss(nn.Module):
         logits_cf:torch.Tensor,
         omega:torch.Tensor,
         answer_scores:torch.Tensor,
-        answer_idx:torch.Tensor,
+        answer_idx:torch.Tensor | None = None,
 
     ) -> torch.Tensor:
 

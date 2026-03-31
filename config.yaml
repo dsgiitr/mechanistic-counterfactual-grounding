@@ -4,6 +4,12 @@
 model:
   # LLaVA model to use as backbone
   llava_model_name: "llava-hf/llava-1.5-7b-hf"
+  # Low-memory load mode for limited VRAM/RAM environments.
+  load_in_4bit: true
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_compute_dtype: "bfloat16"
+  bnb_4bit_use_double_quant: true
+  device_map: "auto"
   # Whether to use LoRA for efficient fine-tuning
   use_lora: true
   lora_r: 16
