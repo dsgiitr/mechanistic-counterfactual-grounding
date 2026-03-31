@@ -33,10 +33,10 @@ from torch.utils.data import DataLoader, Subset
 from torch.cuda.amp import GradScaler
 from transformers import get_scheduler
 
-from models.llava_cvl import LLaVACVL
-from training.erm_loss import ERMLoss
-from training.crm_loss import CRMLoss
-from evaluation.evaluator import VQAEvaluator
+from llava_cvl import LLaVACVL
+from erm_loss import ERMLoss
+from crm_loss import CRMLoss
+from evaluator import VQAEvaluator
 
 logger = logging.getLogger(__name__)
 

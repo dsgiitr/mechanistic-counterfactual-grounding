@@ -5,8 +5,8 @@ from transformers import LlavaForConditionalGeneration ,LlavaProcessor
 from peft import get_peft_model ,LoraConfig,TaskType
 from typing import Dict,Optional,Tuple
 
-from models.exogenous_module import ExogenousVariableModule
-from models.counterfactual_generator import CounterFactualGenerator
+from exogenous_module import ExogenousVariableModule
+from counterfactual_gen import CounterFactualGenerator
 
 
 class VQAHead(nn.Module):
@@ -48,7 +48,7 @@ class LLaVACVL(nn.Module):
     ):
         super().__init__()
 
-        if loar_target_modules is None:
+        if lora_target_modules is None:
             lora_target_modules=['q_proj','v_proj','k_proj','o_proj']
 
         self.llava=LlavaForConditionalGeneration.from_pretrained(
@@ -112,25 +112,25 @@ class LLaVACVL(nn.Module):
     ) -> torch.Tensor:
 
 
-    image_outputs=self.llava.vision_tower(
-        pixel_values,
-        output_hidden_states=True,
+        image_outputs=self.llava.vision_tower(
+            pixel_values,
+            output_hidden_states=True,
 
-    )
+        )
 
-    selected_image_feature=image_outputs.hidden_states[
-        self.llava.config.vision_feature_layer
-    ]
+        selected_image_feature=image_outputs.hidden_states[
+            self.llava.config.vision_feature_layer
+        ]
 
 
-    if self.llava.config.vision_feature_select_strategy=='default':
-        selected_image_feature=selected_image_feature[:,1:]
-    elif self.llava.config.vision_feature_select_strategy=='full':
-        selected_image_feature=selected_iamge_feature
+        if self.llava.config.vision_feature_select_strategy=='default':
+            selected_image_feature=selected_image_feature[:,1:]
+        elif self.llava.config.vision_feature_select_strategy=='full':
+            selected_image_feature=selected_iamge_feature
 
-    
-    image_features=self.llava.multi_modal_projector(selected_image_feature)
-    return image_features
+        
+        image_features=self.llava.multi_modal_projector(selected_image_feature)
+        return image_features
 
 
 def _extract_language_embeddings(
@@ -220,11 +220,11 @@ def _merge_input_ids_with_image_features(
             continue
 
 
-        pos=img_positions[0].item()
-        before=inputs_embed[b,:pos]
-        img_emb=image_features[b]
-        after=inputs_embeds[b,pos+1:]
-        merged_list.append(torch.cat([before,img_emb,after],dim=0))
+         pos=img_positions[0].item()
+         before=inputs_embed[b,:pos]
+         img_emb=image_features[b]
+         after=inputs_embeds[b,pos+1:]
+         merged_list.append(torch.cat([before,img_emb,after],dim=0))
 
 
     max_len=max(t.size(0) for t in merged_list)
@@ -239,9 +239,9 @@ def factual_forward(
     self,
     input_ids: torch.Tensor,
     attention_ask: torch.Tensor,
-    pixel_values: torch Tensor,
+    pixel_values: torch.Tensor,
 
-) -> Tuple[torch.Tnesor,torch.Tensor,torch,Tensor]:
+) -> Tuple[torch.Tensor,torch.Tensor,torch.Tensor]:
 
 
 
@@ -265,9 +265,9 @@ def counterfactual_forward(
     pixel_values: torch.Tensor,
     answer_idx:torch.Tensor,
     image_features: Optional[torch.Tensor]=None,
-    text_embeds: Optional[torch.Tnesor]=None,
-    rand_iamge_features: Optional[torch.Tnesor]=None,
-    rand_text_embeds: Optional[torch.Tnesor]=None,
+    text_embeds: Optional[torch.Tensor]=None,
+    rand_iamge_features: Optional[torch.Tensor]=None,
+    rand_text_embeds: Optional[torch.Tensor]=None,
 
 )-> Tuple[torch.Tensor,torch.Tensor]:
 

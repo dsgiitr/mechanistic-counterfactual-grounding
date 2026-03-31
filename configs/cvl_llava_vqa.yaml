@@ -1,0 +1,89 @@
+# CVL-LLaVA Configuration
+# Counterfactual Vision and Language Learning applied to LLaVA for VQA
+
+model:
+  # LLaVA model to use as backbone
+  llava_model_name: "llava-hf/llava-1.5-7b-hf"
+  # Whether to use LoRA for efficient fine-tuning
+  use_lora: true
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  lora_target_modules: ["q_proj", "v_proj", "k_proj", "o_proj"]
+  # Freeze vision encoder (recommended for memory)
+  freeze_vision_encoder: true
+  # Maximum sequence length
+  max_length: 512
+  # Number of VQA answer classes (VQA v2 standard)
+  num_answers: 3129
+
+data:
+  # "vqa_v2" or "vqa_cp"
+  dataset_name: "vqa_cp"
+  data_dir: "./data/vqa"
+  # Path to COCO images
+  images_dir: "./data/coco/images"
+  # Answer vocabulary file (will be built if not found)
+  answer_vocab_path: "./data/answer_vocab.json"
+  # Min answer frequency for vocabulary
+  min_answer_freq: 9
+  # Image size for vision encoder
+  image_size: 336
+  # Maximum number of answers to keep per question (soft labels)
+  max_answers_per_question: 10
+
+training:
+  output_dir: "./outputs/cvl_llava"
+  num_epochs: 20
+  batch_size: 16
+  gradient_accumulation_steps: 2
+  learning_rate: 2.0e-5
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  lr_scheduler: "cosine"
+  max_grad_norm: 1.0
+  # Mixed precision: "no", "fp16", "bf16"
+  mixed_precision: "bf16"
+  # Logging
+  logging_steps: 50
+  eval_steps: 500
+  save_steps: 500
+  save_total_limit: 3
+  # Seed
+  seed: 42
+  dataloader_num_workers: 4
+
+counterfactual:
+  # Lambda: weight for the counterfactual risk term
+  lambda_cf: 0.5
+  # Epsilon: threshold for interpolation vs. original sample (Eq. 2 in paper)
+  # For epsilon -> 0: more interpolated; for epsilon -> 1: more independent
+  epsilon: 0.1
+  # Clipping constant M for importance weights (prevents high-variance updates)
+  clip_M: 10.0
+  # Beta prior parameters for exogenous variable
+  # Beta(alpha0, beta0) — paper uses (0.1, 0.1) which is bimodal (concentrate near 0 or 1)
+  beta_alpha0: 0.1
+  beta_beta0: 0.1
+  # Gradient ascent steps to optimize u (Eq. 3 in paper)
+  cf_grad_steps: 5
+  # Learning rate for u optimization (gradient ascent on u)
+  cf_lr: 0.01
+  # Alternate between ERM and CRM every N training steps
+  alternate_every: 1
+  # Whether to intervene on vision, language, or both
+  intervene_vision: true
+  intervene_language: true
+  # Probability of applying counterfactual training to a batch
+  cf_prob: 1.0
+  # Whether to detach counterfactual computation from main graph
+  # (saves memory at slight accuracy cost)
+  detach_cf_embeddings: false
+
+evaluation:
+  # VQA evaluation: "accuracy" (standard VQA soft accuracy)
+  metrics: ["vqa_accuracy"]
+  # Evaluate on val split during training
+  eval_during_training: true
+  # Batch size for evaluation
+  eval_batch_size: 32

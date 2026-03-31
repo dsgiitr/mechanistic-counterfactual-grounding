@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-importtorch.nn.functional as F 
+import torch.nn.functional as F 
 
 class CRMLoss(nn.Module):
     def __init__(self,clip_M: float=10.0, lambda_cf: float=0.5):
@@ -14,7 +14,7 @@ class CRMLoss(nn.Module):
         logits_cf:torch.Tensor,
         omega:torch.Tensor,
         answer_scores:torch.Tensor,
-        answer_idx:torch.Tnesor,
+        answer_idx:torch.Tensor,
 
     ) -> torch.Tensor:
 
@@ -32,7 +32,7 @@ class CRMLoss(nn.Module):
     def compute_omega(
         self,
         logits:torch.Tensor,
-        logits_cf:torch.Tnesor,
+        logits_cf:torch.Tensor,
         answer_idx: torch.Tensor,
 
     ) -> torch.Tensor:
@@ -45,12 +45,12 @@ class CRMLoss(nn.Module):
                 1,answer_idx.unsqueeze(1)
            ).squeeze(1)
 
-           log_p_a_cf=log_p_cf.gather(
+            log_p_a_cf=log_p_cf.gather(
             1,answer_idx.unsqueeze(1)
            ).squeeze(1)
 
 
-           log_omega=log_p_a_factual-log_p_a_cf
-           omega=torch.exp(log_omega).clamp(max=self.clip_M)
+            log_omega=log_p_a_factual-log_p_a_cf
+            omega=torch.exp(log_omega).clamp(max=self.clip_M)
 
-           return omega
+            return omega

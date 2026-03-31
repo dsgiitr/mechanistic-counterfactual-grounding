@@ -15,14 +15,14 @@ class CounterFactualGenerator(nn.Module):
         intervene_vision: bool=True,
         intervene_language: bool=True,
     ):
-    super().__init__()
-    self.epsilon=epsilon
-    self.cf_grad_steps=cf_grad_steps
-    self.cf_lr=cf_lr
-    self.lambda_cf=lambda_cf
-    self.clip_M=clip_M
-    self.interven_vision=intervene_vision
-    self.intervene_language=intervene_language
+        super().__init__()
+        self.epsilon=epsilon
+        self.cf_grad_steps=cf_grad_steps
+        self.cf_lr=cf_lr
+        self.lambda_cf=lambda_cf
+        self.clip_M=clip_M
+        self.interven_vision=intervene_vision
+        self.intervene_language=intervene_language
 
 
     def interpolate_embeddings(

@@ -11,23 +11,23 @@ class ExogenousVariableModule(nn.Module):
         epsilon: float=0.1,
     ):
 
-    super()__init__()
-    self.alpha0=alpha0
-    self.beta0=beta0
-    self.epsilon=epsilon
+        super().__init__()
+        self.alpha0=alpha0
+        self.beta0=beta0
+        self.epsilon=epsilon
 
 
-    self.register_buffer("alpha_v",torch.tensor(alpha0))
-    self.register_buffer("beta_v",torch.tensor(beta0))
-    self.register_buffer("alpha_q",torch.tensor(alpha0))
-    self.register_buffer("beta_q",torch.tensor(beta0))
+        self.register_buffer("alpha_v",torch.tensor(alpha0))
+        self.register_buffer("beta_v",torch.tensor(beta0))
+        self.register_buffer("alpha_q",torch.tensor(alpha0))
+        self.register_buffer("beta_q",torch.tensor(beta0))
 
-    self.register_buffer("n_updates",torch.tensor(0,dtype=torch.long))
+        self.register_buffer("n_updates",torch.tensor(0,dtype=torch.long))
 
     def update_posterior(
         self,
         logits:torch.Tensor,
-        answer_idx:torch.Tnesor,
+        answer_idx:torch.Tensor,
 
     ) -> None:
 
