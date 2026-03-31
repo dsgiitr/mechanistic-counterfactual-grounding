@@ -35,7 +35,7 @@ data:
 training:
   output_dir: "./outputs/cvl_llava"
   num_epochs: 20
-  batch_size: 16
+  batch_size: 4
   gradient_accumulation_steps: 2
   learning_rate: 2.0e-5
   weight_decay: 0.01

@@ -95,7 +95,7 @@ class LLaVACVL(nn.Module):
         )
         
 
-        self.cf_generator=CounterfactualGenerator(
+        self.cf_generator=CounterFactualGenerator(
             epsilon=epsilon,
             cf_grad_steps=cf_grad_steps,
             cf_lr=cf_lr,
