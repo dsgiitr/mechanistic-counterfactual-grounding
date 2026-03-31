@@ -27,6 +27,9 @@ import numpy as np
 import torch
 import yaml
 
+# Avoid hf-xet CAS transfer issues during model/processor downloads.
+os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
+
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

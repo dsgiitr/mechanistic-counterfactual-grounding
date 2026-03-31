@@ -1,3 +1,5 @@
+import os
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -47,6 +49,9 @@ class LLaVACVL(nn.Module):
         intervene_language: bool=True,
     ):
         super().__init__()
+
+        # Avoid hf-xet CAS download path issues in some hub/client versions.
+        os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 
         if lora_target_modules is None:
             lora_target_modules=['q_proj','v_proj','k_proj','o_proj']
