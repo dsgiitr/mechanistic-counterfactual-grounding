@@ -79,6 +79,7 @@ class CVLTrainer:
         self.logging_steps = tcfg["logging_steps"]
         self.eval_steps = tcfg["eval_steps"]
         self.save_steps = tcfg["save_steps"]
+        self.save_every_fraction_epoch = tcfg.get("save_every_fraction_epoch")
         self.save_total_limit = tcfg.get("save_total_limit", 3)
         self.mixed_precision = tcfg.get("mixed_precision", "bf16")
 
@@ -267,6 +268,24 @@ class CVLTrainer:
         logger.info(f"Steps per epoch: {len(self.train_dataloader)}")
         logger.info(f"Total steps: {len(self.train_dataloader) * self.num_epochs}")
 
+        optimizer_steps_per_epoch = max(1, len(self.train_dataloader) // self.grad_accum_steps)
+        if self.save_every_fraction_epoch is not None:
+            save_every_fraction = float(self.save_every_fraction_epoch)
+            if save_every_fraction <= 0:
+                raise ValueError("training.save_every_fraction_epoch must be > 0")
+            save_interval_optimizer_steps = max(1, int(round(optimizer_steps_per_epoch * save_every_fraction)))
+            logger.info(
+                "Checkpoint cadence: every %.4f epoch(s) (~%d optimizer steps)",
+                save_every_fraction,
+                save_interval_optimizer_steps,
+            )
+        else:
+            save_interval_optimizer_steps = self.save_steps
+            logger.info(
+                "Checkpoint cadence: every %d optimizer steps (save_steps)",
+                save_interval_optimizer_steps,
+            )
+
         has_device_map = (
             hasattr(self.model, "llava")
             and hasattr(self.model.llava, "hf_device_map")
@@ -282,6 +301,7 @@ class CVLTrainer:
             self.model.train()
             epoch_start = time.time()
             running_losses = {"erm": [], "crm": []}
+            optimizer_steps_this_epoch = 0
 
             progress = tqdm(
                 enumerate(self.train_dataloader),
@@ -300,6 +320,7 @@ class CVLTrainer:
                 if (step + 1) % self.grad_accum_steps == 0:
                     grad_norm = self.optimizer_step()
                     self.global_step += 1
+                    optimizer_steps_this_epoch += 1
 
                     progress.set_postfix(
                         loss=f"{step_info['loss']:.4f}",
@@ -355,7 +376,7 @@ class CVLTrainer:
                         self.model.train()
 
                     # Periodic save
-                    if self.global_step % self.save_steps == 0:
+                    if optimizer_steps_this_epoch % save_interval_optimizer_steps == 0:
                         self.save_checkpoint(f"checkpoint-{self.global_step}")
 
             epoch_time = time.time() - epoch_start

@@ -411,3 +411,280 @@
 2026-04-01 10:48:04 | INFO | trainer | Starting CVL training for 20 epochs
 2026-04-01 10:48:04 | INFO | trainer | Steps per epoch: 377
 2026-04-01 10:48:04 | INFO | trainer | Total steps: 7540
+2026-04-05 12:14:26 | INFO | __main__ | Using device: cuda
+2026-04-05 12:14:26 | INFO | __main__ | Loading LLaVA processor: llava-hf/llava-1.5-7b-hf
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/chat_template.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:14:27 | WARNING | huggingface_hub.utils._http | Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/chat_template.json "HTTP/1.1 200 OK"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/chat_template.jinja "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/chat_template.jinja "HTTP/1.1 200 OK"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/audio_tokenizer_config.json "HTTP/1.1 404 Not Found"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/preprocessor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/preprocessor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/preprocessor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/preprocessor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-04-05 12:14:27 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-05 12:14:28 | INFO | __main__ | Loading answer vocab from ./data/answer_vocab.json
+2026-04-05 12:14:28 | INFO | __main__ | Answer vocabulary size: 11118
+2026-04-05 12:14:28 | INFO | __main__ | Loading vqa_cp datasets...
+2026-04-05 12:17:23 | INFO | __main__ | Train samples: 48346, Val samples: 609765
+2026-04-05 12:17:23 | INFO | __main__ | Initializing LLaVA-CVL model...
+2026-04-05 12:17:23 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:17:23 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 12:17:23 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:17:23 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 12:17:25 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/model.safetensors "HTTP/1.1 404 Not Found"
+2026-04-05 12:17:25 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/model.safetensors.index.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:17:26 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/model.safetensors.index.json "HTTP/1.1 200 OK"
+2026-04-05 12:17:26 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/revision/main "HTTP/1.1 200 OK"
+2026-04-05 12:17:33 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/generation_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:17:33 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/generation_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:17:33 | INFO | __main__ | Parameters: 179,290,990 trainable / 3,711,892,334 total (4.8%)
+2026-04-05 12:17:33 | INFO | trainer | Starting CVL training for 20 epochs
+2026-04-05 12:17:33 | INFO | trainer | Steps per epoch: 3021
+2026-04-05 12:17:33 | INFO | trainer | Total steps: 60420
+2026-04-05 12:19:20 | INFO | __main__ | Using device: cuda
+2026-04-05 12:19:20 | INFO | __main__ | Loading LLaVA processor: llava-hf/llava-1.5-7b-hf
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:19:20 | WARNING | huggingface_hub.utils._http | Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/chat_template.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/chat_template.json "HTTP/1.1 200 OK"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/chat_template.jinja "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/chat_template.jinja "HTTP/1.1 200 OK"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/audio_tokenizer_config.json "HTTP/1.1 404 Not Found"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/preprocessor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/preprocessor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/preprocessor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/preprocessor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:19:20 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-04-05 12:19:21 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-05 12:19:21 | INFO | __main__ | Loading answer vocab from ./data/answer_vocab.json
+2026-04-05 12:19:21 | INFO | __main__ | Answer vocabulary size: 11118
+2026-04-05 12:19:21 | INFO | __main__ | Loading vqa_cp datasets...
+2026-04-05 12:21:43 | INFO | __main__ | Train samples: 48346, Val samples: 609765
+2026-04-05 12:21:43 | INFO | __main__ | Initializing LLaVA-CVL model...
+2026-04-05 12:21:43 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:21:43 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 12:21:43 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:21:43 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 12:21:45 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/model.safetensors "HTTP/1.1 404 Not Found"
+2026-04-05 12:21:45 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/model.safetensors.index.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:21:45 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/model.safetensors.index.json "HTTP/1.1 200 OK"
+2026-04-05 12:21:45 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/revision/main "HTTP/1.1 200 OK"
+2026-04-05 12:21:54 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/generation_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:21:54 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/generation_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:21:55 | INFO | __main__ | Parameters: 179,290,990 trainable / 3,711,892,334 total (4.8%)
+2026-04-05 12:21:55 | INFO | trainer | Starting CVL training for 20 epochs
+2026-04-05 12:21:55 | INFO | trainer | Steps per epoch: 377
+2026-04-05 12:21:55 | INFO | trainer | Total steps: 7540
+2026-04-05 12:22:52 | INFO | __main__ | Using device: cuda
+2026-04-05 12:22:52 | INFO | __main__ | Loading LLaVA processor: llava-hf/llava-1.5-7b-hf
+2026-04-05 12:22:52 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-04-05 12:22:52 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:22:52 | WARNING | huggingface_hub.utils._http | Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-04-05 12:22:52 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:22:52 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/chat_template.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:22:52 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/chat_template.json "HTTP/1.1 200 OK"
+2026-04-05 12:22:52 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/chat_template.jinja "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:22:52 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/chat_template.jinja "HTTP/1.1 200 OK"
+2026-04-05 12:22:52 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/audio_tokenizer_config.json "HTTP/1.1 404 Not Found"
+2026-04-05 12:22:52 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:22:52 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:22:52 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/preprocessor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:22:52 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/preprocessor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:22:53 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:22:53 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:22:53 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/preprocessor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:22:53 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/preprocessor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:22:53 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:22:53 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 12:22:53 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:22:53 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:22:53 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:22:53 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:22:53 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-04-05 12:22:53 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-05 12:22:53 | INFO | __main__ | Loading answer vocab from ./data/answer_vocab.json
+2026-04-05 12:22:53 | INFO | __main__ | Answer vocabulary size: 11118
+2026-04-05 12:22:53 | INFO | __main__ | Loading vqa_cp datasets...
+2026-04-05 12:25:19 | INFO | __main__ | Train samples: 48346, Val samples: 609765
+2026-04-05 12:25:19 | INFO | __main__ | Initializing LLaVA-CVL model...
+2026-04-05 12:25:19 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:25:19 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 12:25:19 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:25:19 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 12:25:21 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/model.safetensors "HTTP/1.1 404 Not Found"
+2026-04-05 12:25:21 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/model.safetensors.index.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:25:21 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/model.safetensors.index.json "HTTP/1.1 200 OK"
+2026-04-05 12:25:21 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/revision/main "HTTP/1.1 200 OK"
+2026-04-05 12:25:29 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/generation_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:25:29 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/generation_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:25:29 | INFO | __main__ | Parameters: 179,290,990 trainable / 3,711,892,334 total (4.8%)
+2026-04-05 12:25:29 | INFO | trainer | Starting CVL training for 20 epochs
+2026-04-05 12:25:29 | INFO | trainer | Steps per epoch: 377
+2026-04-05 12:25:29 | INFO | trainer | Total steps: 7540
+2026-04-05 12:27:17 | INFO | __main__ | Using device: cuda
+2026-04-05 12:27:17 | INFO | __main__ | Loading LLaVA processor: llava-hf/llava-1.5-7b-hf
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/chat_template.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/chat_template.json "HTTP/1.1 200 OK"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/chat_template.jinja "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/chat_template.jinja "HTTP/1.1 200 OK"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/audio_tokenizer_config.json "HTTP/1.1 404 Not Found"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:27:18 | WARNING | huggingface_hub.utils._http | Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/preprocessor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/preprocessor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/preprocessor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/preprocessor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-04-05 12:27:18 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-05 12:27:19 | INFO | __main__ | Loading answer vocab from ./data/answer_vocab.json
+2026-04-05 12:27:19 | INFO | __main__ | Answer vocabulary size: 11118
+2026-04-05 12:27:19 | INFO | __main__ | Loading vqa_cp datasets...
+2026-04-05 12:29:40 | INFO | __main__ | Train samples: 48346, Val samples: 609765
+2026-04-05 12:29:40 | INFO | __main__ | Initializing LLaVA-CVL model...
+2026-04-05 12:29:41 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:29:41 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 12:29:41 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:29:41 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 12:29:42 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/model.safetensors "HTTP/1.1 404 Not Found"
+2026-04-05 12:29:42 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/model.safetensors.index.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:29:42 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/model.safetensors.index.json "HTTP/1.1 200 OK"
+2026-04-05 12:29:43 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/revision/main "HTTP/1.1 200 OK"
+2026-04-05 12:29:48 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/generation_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:29:48 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/generation_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:29:49 | INFO | __main__ | Parameters: 179,290,990 trainable / 3,711,892,334 total (4.8%)
+2026-04-05 12:29:49 | INFO | trainer | Starting CVL training for 20 epochs
+2026-04-05 12:29:49 | INFO | trainer | Steps per epoch: 377
+2026-04-05 12:29:49 | INFO | trainer | Total steps: 7540
+2026-04-05 12:37:31 | INFO | __main__ | Using device: cuda
+2026-04-05 12:37:31 | INFO | __main__ | Loading LLaVA processor: llava-hf/llava-1.5-7b-hf
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:37:31 | WARNING | huggingface_hub.utils._http | Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/chat_template.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/chat_template.json "HTTP/1.1 200 OK"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/chat_template.jinja "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/chat_template.jinja "HTTP/1.1 200 OK"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/audio_tokenizer_config.json "HTTP/1.1 404 Not Found"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/preprocessor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/preprocessor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/preprocessor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/preprocessor_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-04-05 12:37:31 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-05 12:37:32 | INFO | __main__ | Loading answer vocab from ./data/answer_vocab.json
+2026-04-05 12:37:32 | INFO | __main__ | Answer vocabulary size: 11118
+2026-04-05 12:37:32 | INFO | __main__ | Loading vqa_cp datasets...
+2026-04-05 12:39:57 | INFO | __main__ | Train samples: 48346, Val samples: 609765
+2026-04-05 12:39:57 | INFO | __main__ | Initializing LLaVA-CVL model...
+2026-04-05 12:39:58 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:39:58 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 12:39:58 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:39:58 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 12:39:59 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/model.safetensors "HTTP/1.1 404 Not Found"
+2026-04-05 12:39:59 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/model.safetensors.index.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:39:59 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/model.safetensors.index.json "HTTP/1.1 200 OK"
+2026-04-05 12:40:00 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/revision/main "HTTP/1.1 200 OK"
+2026-04-05 12:40:05 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/generation_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 12:40:05 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/generation_config.json "HTTP/1.1 200 OK"
+2026-04-05 12:40:06 | INFO | __main__ | Parameters: 179,290,990 trainable / 3,711,892,334 total (4.8%)
+2026-04-05 12:40:06 | INFO | trainer | Starting CVL training for 20 epochs
+2026-04-05 12:40:06 | INFO | trainer | Steps per epoch: 755
+2026-04-05 12:40:06 | INFO | trainer | Total steps: 15100
+2026-04-05 13:30:31 | INFO | __main__ | Using device: cuda
+2026-04-05 13:30:31 | INFO | __main__ | Loading LLaVA processor: llava-hf/llava-1.5-7b-hf
+2026-04-05 13:30:31 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-04-05 13:30:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 13:30:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 13:30:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/chat_template.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 13:30:31 | WARNING | huggingface_hub.utils._http | Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-04-05 13:30:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/chat_template.json "HTTP/1.1 200 OK"
+2026-04-05 13:30:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/chat_template.jinja "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 13:30:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/chat_template.jinja "HTTP/1.1 200 OK"
+2026-04-05 13:30:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/audio_tokenizer_config.json "HTTP/1.1 404 Not Found"
+2026-04-05 13:30:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 13:30:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 13:30:31 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/preprocessor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 13:30:32 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/preprocessor_config.json "HTTP/1.1 200 OK"
+2026-04-05 13:30:32 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/processor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 13:30:32 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/processor_config.json "HTTP/1.1 200 OK"
+2026-04-05 13:30:32 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/preprocessor_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 13:30:32 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/preprocessor_config.json "HTTP/1.1 200 OK"
+2026-04-05 13:30:32 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 13:30:32 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 13:30:32 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 13:30:32 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-04-05 13:30:32 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 13:30:32 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-04-05 13:30:32 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-04-05 13:30:32 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-05 13:30:32 | INFO | __main__ | Loading answer vocab from ./data/answer_vocab.json
+2026-04-05 13:30:32 | INFO | __main__ | Answer vocabulary size: 11118
+2026-04-05 13:30:32 | INFO | __main__ | Loading vqa_cp datasets...
+2026-04-05 13:32:57 | INFO | __main__ | Train samples: 48346, Val samples: 609765
+2026-04-05 13:32:57 | INFO | __main__ | Initializing LLaVA-CVL model...
+2026-04-05 13:32:57 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 13:32:57 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 13:32:58 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 13:32:58 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/config.json "HTTP/1.1 200 OK"
+2026-04-05 13:32:59 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/model.safetensors "HTTP/1.1 404 Not Found"
+2026-04-05 13:32:59 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/model.safetensors.index.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 13:32:59 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/model.safetensors.index.json "HTTP/1.1 200 OK"
+2026-04-05 13:32:59 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/llava-hf/llava-1.5-7b-hf/revision/main "HTTP/1.1 200 OK"
+2026-04-05 13:33:05 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/llava-hf/llava-1.5-7b-hf/resolve/main/generation_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-05 13:33:05 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/llava-hf/llava-1.5-7b-hf/b234b804b114d9e37bb655e11cbbb5f5e971b7a9/generation_config.json "HTTP/1.1 200 OK"
+2026-04-05 13:33:06 | INFO | __main__ | Parameters: 179,290,990 trainable / 3,711,892,334 total (4.8%)
+2026-04-05 13:33:06 | INFO | trainer | Starting CVL training for 20 epochs
+2026-04-05 13:33:06 | INFO | trainer | Steps per epoch: 755
+2026-04-05 13:33:06 | INFO | trainer | Total steps: 15100
+2026-04-05 13:33:06 | INFO | trainer | Checkpoint cadence: every 0.3333 epoch(s) (~8 optimizer steps)
