@@ -688,3 +688,5 @@
 2026-04-05 13:33:06 | INFO | trainer | Steps per epoch: 755
 2026-04-05 13:33:06 | INFO | trainer | Total steps: 15100
 2026-04-05 13:33:06 | INFO | trainer | Checkpoint cadence: every 0.3333 epoch(s) (~8 optimizer steps)
+2026-04-05 14:31:35 | INFO | trainer | Saved checkpoint to outputs/cvl_llava_vqacp/checkpoint-8
+2026-04-05 15:29:31 | INFO | trainer | Saved checkpoint to outputs/cvl_llava_vqacp/checkpoint-16
