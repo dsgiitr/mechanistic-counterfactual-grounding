@@ -146,8 +146,8 @@ class CVLTrainer:
         )
 
     def _align_optimizer_state_devices(self) -> int:
-        """Move optimizer state tensors to the same device as their parameter."""
-        moved_tensors = 0
+        """Align optimizer state tensor device/dtype with each parameter."""
+        moved_or_cast_tensors = 0
         for group in self.optimizer.param_groups:
             for param in group["params"]:
                 param_state = self.optimizer.state.get(param)
@@ -155,12 +155,25 @@ class CVLTrainer:
                     continue
 
                 target_device = param.device
+                target_dtype = param.dtype
                 for key, value in param_state.items():
-                    if torch.is_tensor(value) and value.device != target_device:
-                        param_state[key] = value.to(target_device)
-                        moved_tensors += 1
+                    if not torch.is_tensor(value):
+                        continue
 
-        return moved_tensors
+                    new_value = value
+                    if value.device != target_device:
+                        new_value = new_value.to(target_device)
+
+                    # Adam moment buffers are floating tensors and must match
+                    # parameter/gradient dtype to avoid lerp dtype errors.
+                    if key != "step" and new_value.is_floating_point() and new_value.dtype != target_dtype:
+                        new_value = new_value.to(target_dtype)
+
+                    if new_value is not value:
+                        param_state[key] = new_value
+                        moved_or_cast_tensors += 1
+
+        return moved_or_cast_tensors
 
     def _force_optimizer_single_tensor_mode(self) -> None:
         """Disable foreach/fused optimizer kernels (can break on mixed devices)."""
