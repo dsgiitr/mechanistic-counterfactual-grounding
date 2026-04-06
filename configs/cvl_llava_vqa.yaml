@@ -50,7 +50,7 @@ cache:
 training:
   output_dir: "./outputs/cvl_llava"
   num_epochs: 20
-  batch_size: 96
+  batch_size: 64
   gradient_accumulation_steps: 16
   learning_rate: 2.0e-5
   weight_decay: 0.01
