@@ -21,6 +21,11 @@ class VQAHead(nn.Module):
         )
 
     def forward(self, hidden: torch.Tensor) -> torch.Tensor:
+        # Keep activations aligned with classifier weights to avoid Half/Float
+        # mismatches when mixed precision and quantized backbones are combined.
+        ref = self.classifier[0].weight
+        if hidden.device != ref.device or hidden.dtype != ref.dtype:
+            hidden = hidden.to(device=ref.device, dtype=ref.dtype)
         return self.classifier(hidden)
 
 
