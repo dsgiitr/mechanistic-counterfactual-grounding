@@ -264,11 +264,35 @@ class CVLTrainer:
 
     def train(self) -> None:
         """Full training loop."""
-        logger.info(f"Starting CVL training for {self.num_epochs} epochs")
-        logger.info(f"Steps per epoch: {len(self.train_dataloader)}")
-        logger.info(f"Total steps: {len(self.train_dataloader) * self.num_epochs}")
+        steps_per_epoch = len(self.train_dataloader)
+        optimizer_steps_per_epoch = max(1, steps_per_epoch // self.grad_accum_steps)
+        total_optimizer_steps = optimizer_steps_per_epoch * self.num_epochs
 
-        optimizer_steps_per_epoch = max(1, len(self.train_dataloader) // self.grad_accum_steps)
+        start_epoch = min(self.global_step // optimizer_steps_per_epoch, self.num_epochs)
+        resume_optimizer_offset = 0
+        if start_epoch < self.num_epochs:
+            resume_optimizer_offset = self.global_step % optimizer_steps_per_epoch
+
+        logger.info(f"Starting CVL training for {self.num_epochs} epochs")
+        logger.info(f"Steps per epoch: {steps_per_epoch}")
+        logger.info(f"Total optimizer steps (target): {total_optimizer_steps}")
+        logger.info(
+            "Resume state — global_step=%d, start_epoch=%d/%d, optimizer-step offset=%d",
+            self.global_step,
+            start_epoch,
+            self.num_epochs,
+            resume_optimizer_offset,
+        )
+
+        remaining_optimizer_steps = max(0, total_optimizer_steps - self.global_step)
+        logger.info(f"Remaining optimizer steps: {remaining_optimizer_steps}")
+
+        if self.global_step >= total_optimizer_steps:
+            logger.info("Checkpoint already reached/exceeded target steps; saving final model and exiting.")
+            self.save_checkpoint("final_model")
+            logger.info(f"Training complete. Best val acc: {self.best_val_acc:.4f}")
+            return
+
         if self.save_every_fraction_epoch is not None:
             save_every_fraction = float(self.save_every_fraction_epoch)
             if save_every_fraction <= 0:
@@ -297,20 +321,38 @@ class CVLTrainer:
             self.model.to(self.device)
         self.optimizer.zero_grad()
 
-        for epoch in range(self.num_epochs):
+        for epoch in range(start_epoch, self.num_epochs):
             self.model.train()
             epoch_start = time.time()
             running_losses = {"erm": [], "crm": []}
             optimizer_steps_this_epoch = 0
 
+            # If resuming in the middle of an epoch, skip already consumed mini-batches
+            # so we continue from the same optimizer-step offset.
+            skip_batches = 0
+            if epoch == start_epoch and resume_optimizer_offset > 0:
+                skip_batches = min(
+                    steps_per_epoch,
+                    resume_optimizer_offset * self.grad_accum_steps,
+                )
+                logger.info(
+                    "Resuming epoch %d: skipping %d already-processed batches (%d optimizer steps)",
+                    epoch + 1,
+                    skip_batches,
+                    resume_optimizer_offset,
+                )
+
             progress = tqdm(
                 enumerate(self.train_dataloader),
-                total=len(self.train_dataloader),
+                total=steps_per_epoch,
                 desc=f"Epoch {epoch + 1}/{self.num_epochs}",
                 leave=True,
             )
 
             for step, batch in progress:
+                if step < skip_batches:
+                    continue
+
                 step_info = self.train_step(batch)
 
                 loss_type = step_info["loss_type"]
@@ -321,6 +363,10 @@ class CVLTrainer:
                     grad_norm = self.optimizer_step()
                     self.global_step += 1
                     optimizer_steps_this_epoch += 1
+
+                    if self.global_step >= total_optimizer_steps:
+                        logger.info("Reached target optimizer steps (%d).", total_optimizer_steps)
+                        break
 
                     progress.set_postfix(
                         loss=f"{step_info['loss']:.4f}",
@@ -378,6 +424,9 @@ class CVLTrainer:
                     # Periodic save
                     if optimizer_steps_this_epoch % save_interval_optimizer_steps == 0:
                         self.save_checkpoint(f"checkpoint-{self.global_step}")
+
+            if self.global_step >= total_optimizer_steps:
+                break
 
             epoch_time = time.time() - epoch_start
             logger.info(f"Epoch {epoch+1}/{self.num_epochs} done in {epoch_time:.1f}s")
@@ -453,9 +502,76 @@ class CVLTrainer:
     def load_checkpoint(self, checkpoint_path: str) -> None:
         """Load a checkpoint to resume training."""
         state = torch.load(checkpoint_path, map_location=self.device)
-        self.model.load_state_dict(state["model_state_dict"])
-        self.optimizer.load_state_dict(state["optimizer_state_dict"])
-        self.scheduler.load_state_dict(state["scheduler_state_dict"])
+
+        checkpoint_state_dict = state["model_state_dict"]
+        model_state_keys = set(self.model.state_dict().keys())
+
+        # BitsAndBytes quantization metadata keys are often serialization-specific
+        # and can differ across environments; ignore them when resuming.
+        quant_meta_tokens = (
+            ".absmax",
+            ".quant_map",
+            ".nested_absmax",
+            ".nested_quant_map",
+            ".quant_state.",
+        )
+
+        filtered_state_dict = {
+            k: v
+            for k, v in checkpoint_state_dict.items()
+            if k in model_state_keys and not any(tok in k for tok in quant_meta_tokens)
+        }
+
+        load_result = self.model.load_state_dict(filtered_state_dict, strict=False)
+
+        skipped_quant_keys = [
+            k for k in checkpoint_state_dict.keys() if any(tok in k for tok in quant_meta_tokens)
+        ]
+        skipped_unknown_keys = [
+            k for k in checkpoint_state_dict.keys()
+            if k not in model_state_keys and not any(tok in k for tok in quant_meta_tokens)
+        ]
+
+        if skipped_quant_keys:
+            logger.warning(
+                "Checkpoint contains %d quantization metadata key(s); ignored during resume.",
+                len(skipped_quant_keys),
+            )
+        if skipped_unknown_keys:
+            logger.warning(
+                "Checkpoint contains %d unexpected non-model key(s); first few: %s",
+                len(skipped_unknown_keys),
+                skipped_unknown_keys[:10],
+            )
+        if load_result.unexpected_keys:
+            logger.warning(
+                "Model load reported %d unexpected key(s); first few: %s",
+                len(load_result.unexpected_keys),
+                load_result.unexpected_keys[:10],
+            )
+        if load_result.missing_keys:
+            logger.warning(
+                "Model load reported %d missing key(s); first few: %s",
+                len(load_result.missing_keys),
+                load_result.missing_keys[:10],
+            )
+
+        try:
+            self.optimizer.load_state_dict(state["optimizer_state_dict"])
+        except Exception as exc:
+            logger.warning(
+                "Failed to restore optimizer state (%s). Continuing with fresh optimizer state.",
+                exc,
+            )
+
+        try:
+            self.scheduler.load_state_dict(state["scheduler_state_dict"])
+        except Exception as exc:
+            logger.warning(
+                "Failed to restore scheduler state (%s). Continuing with fresh scheduler state.",
+                exc,
+            )
+
         self.global_step = state["global_step"]
         self.best_val_acc = state["best_val_acc"]
 

@@ -5,3 +5,7 @@ data
 outputs//checkpoint-/
 *.pt
 .log
+
+outputs//checkpoint-/
+*.pt
+.log
