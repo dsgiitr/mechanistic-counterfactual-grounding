@@ -1,11 +1,3 @@
 data
 *.zip
 *.log
-
-outputs//checkpoint-/
-*.pt
-.log
-
-outputs//checkpoint-/
-*.pt
-.log
