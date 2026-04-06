@@ -138,7 +138,30 @@ class CVLTrainer:
                 "weight_decay": 0.0,
             },
         ]
-        return torch.optim.AdamW(param_groups, lr=tcfg["learning_rate"])
+        # Use non-foreach AdamW to avoid cross-device foreach crashes when
+        # trainable params are split across CPU/CUDA (e.g., with device_map).
+        return torch.optim.AdamW(
+            param_groups,
+            lr=tcfg["learning_rate"],
+            foreach=False,
+        )
+
+    def _align_optimizer_state_devices(self) -> int:
+        """Move optimizer state tensors to the same device as their parameter."""
+        moved_tensors = 0
+        for group in self.optimizer.param_groups:
+            for param in group["params"]:
+                param_state = self.optimizer.state.get(param)
+                if not param_state:
+                    continue
+
+                target_device = param.device
+                for key, value in param_state.items():
+                    if torch.is_tensor(value) and value.device != target_device:
+                        param_state[key] = value.to(target_device)
+                        moved_tensors += 1
+
+        return moved_tensors
 
     def _get_random_batch(self, batch_size: int) -> Dict[str, torch.Tensor]:
         """
@@ -501,7 +524,9 @@ class CVLTrainer:
 
     def load_checkpoint(self, checkpoint_path: str) -> None:
         """Load a checkpoint to resume training."""
-        state = torch.load(checkpoint_path, map_location=self.device)
+        # Load on CPU first; model/optimizer states are moved to their target
+        # parameter devices explicitly to support mixed device_map setups.
+        state = torch.load(checkpoint_path, map_location="cpu")
 
         checkpoint_state_dict = state["model_state_dict"]
         model_state_keys = set(self.model.state_dict().keys())
@@ -558,6 +583,12 @@ class CVLTrainer:
 
         try:
             self.optimizer.load_state_dict(state["optimizer_state_dict"])
+            moved = self._align_optimizer_state_devices()
+            if moved > 0:
+                logger.info(
+                    "Aligned %d optimizer state tensor(s) to parameter devices.",
+                    moved,
+                )
         except Exception as exc:
             logger.warning(
                 "Failed to restore optimizer state (%s). Continuing with fresh optimizer state.",
