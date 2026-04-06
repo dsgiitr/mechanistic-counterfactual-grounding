@@ -30,7 +30,6 @@ from typing import Dict, Optional, Tuple
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Subset
-from torch.cuda.amp import GradScaler
 from transformers import get_scheduler
 from tqdm.auto import tqdm
 
@@ -109,7 +108,7 @@ class CVLTrainer:
 
         # Mixed precision scaler (fp16 only; bf16 doesn't need it)
         self.use_amp = self.mixed_precision == "fp16"
-        self.scaler = GradScaler(enabled=self.use_amp)
+        self.scaler = torch.amp.GradScaler("cuda", enabled=self.use_amp)
 
         # Evaluator
         self.evaluator = VQAEvaluator()
@@ -162,6 +161,14 @@ class CVLTrainer:
                         moved_tensors += 1
 
         return moved_tensors
+
+    def _force_optimizer_single_tensor_mode(self) -> None:
+        """Disable foreach/fused optimizer kernels (can break on mixed devices)."""
+        self.optimizer.defaults["foreach"] = False
+        self.optimizer.defaults["fused"] = False
+        for group in self.optimizer.param_groups:
+            group["foreach"] = False
+            group["fused"] = False
 
     def _get_random_batch(self, batch_size: int) -> Dict[str, torch.Tensor]:
         """
@@ -268,6 +275,9 @@ class CVLTrainer:
 
     def optimizer_step(self) -> float:
         """Apply accumulated gradients."""
+        self._force_optimizer_single_tensor_mode()
+        self._align_optimizer_state_devices()
+
         if self.use_amp:
             self.scaler.unscale_(self.optimizer)
             grad_norm = torch.nn.utils.clip_grad_norm_(
@@ -583,6 +593,7 @@ class CVLTrainer:
 
         try:
             self.optimizer.load_state_dict(state["optimizer_state_dict"])
+            self._force_optimizer_single_tensor_mode()
             moved = self._align_optimizer_state_devices()
             if moved > 0:
                 logger.info(

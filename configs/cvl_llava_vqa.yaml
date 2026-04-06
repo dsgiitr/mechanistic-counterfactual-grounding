@@ -50,8 +50,8 @@ cache:
 training:
   output_dir: "./outputs/cvl_llava"
   num_epochs: 20
-  batch_size: 64
-  gradient_accumulation_steps: 32
+  batch_size: 96
+  gradient_accumulation_steps: 16
   learning_rate: 2.0e-5
   weight_decay: 0.01
   warmup_ratio: 0.1
@@ -104,4 +104,4 @@ evaluation:
   # Evaluate on val split during training
   eval_during_training: true
   # Batch size for evaluation
-  eval_batch_size: 1
+  eval_batch_size: 4
