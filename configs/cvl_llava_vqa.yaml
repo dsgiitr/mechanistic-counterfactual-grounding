@@ -61,7 +61,7 @@ training:
   mixed_precision: "bf16"
   # Logging
   logging_steps: 50
-  eval_steps: 450
+  eval_steps: 900
   save_steps: 150
   # If set, overrides save_steps and saves every fraction of an epoch.
   # 0.3333 ~= every one-third epoch.
