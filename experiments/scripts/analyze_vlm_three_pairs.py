@@ -39,6 +39,8 @@ def layer_family(layer_name):
         return "mlp"
     if "final" in layer_name:
         return "final"
+    if "head_" in layer_name:
+        return "circuit_head"
     return "other"
 
 
