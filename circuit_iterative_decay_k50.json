@@ -1,0 +1,674 @@
+{
+  "circuit": [
+    {
+      "layer": 11,
+      "head": 31,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 11.392871856689453,
+      "mean_beta": 0.027327271178364754,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 11,
+      "head": 0,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 8.694660186767578,
+      "mean_beta": 0.02656196616590023,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 13,
+      "head": 17,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 3.4961342811584473,
+      "mean_beta": 0.024765973910689354,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 11,
+      "head": 27,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 2.3945155143737793,
+      "mean_beta": 0.028577003628015518,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 15,
+      "head": 31,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 1.9121233224868774,
+      "mean_beta": 0.02490154653787613,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 31,
+      "head": 10,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 1.8636162281036377,
+      "mean_beta": 0.021694259718060493,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 12,
+      "head": 3,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 1.6609677076339722,
+      "mean_beta": 0.020394589751958847,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 19,
+      "head": 18,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 1.5554447174072266,
+      "mean_beta": 0.01524492260068655,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 22,
+      "head": 6,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 1.530895709991455,
+      "mean_beta": 0.04491744935512543,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 30,
+      "head": 25,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 1.5168309211730957,
+      "mean_beta": 0.022326212376356125,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 8,
+      "head": 11,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 1.430650234222412,
+      "mean_beta": 0.02956237830221653,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 14,
+      "head": 6,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 1.189911961555481,
+      "mean_beta": 0.015509510412812233,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 17,
+      "head": 20,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 1.1837414503097534,
+      "mean_beta": 0.021417861804366112,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 17,
+      "head": 29,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 1.0965255498886108,
+      "mean_beta": 0.013975193724036217,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 24,
+      "head": 7,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 1.0529932975769043,
+      "mean_beta": 0.021955184638500214,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 14,
+      "head": 30,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 1.0435001850128174,
+      "mean_beta": 0.019727544859051704,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 28,
+      "head": 26,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 0.940072774887085,
+      "mean_beta": 0.03184059262275696,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 13,
+      "head": 8,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 0.9212464094161987,
+      "mean_beta": 0.029848385602235794,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 21,
+      "head": 2,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 0.8814539313316345,
+      "mean_beta": 0.009776020422577858,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 15,
+      "head": 3,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 0.8587186932563782,
+      "mean_beta": 0.024633560329675674,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 15,
+      "head": 7,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 0.7651337385177612,
+      "mean_beta": 0.016859179362654686,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 10,
+      "head": 1,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 0.6985012292861938,
+      "mean_beta": 0.023670310154557228,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 12,
+      "head": 1,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 0.627180278301239,
+      "mean_beta": 0.022686615586280823,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 15,
+      "head": 30,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 0.6235460638999939,
+      "mean_beta": 0.021476950496435165,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 17,
+      "head": 13,
+      "iteration": 0,
+      "target": "logits",
+      "combined_score": 0.6231897473335266,
+      "mean_beta": 0.017562752589583397,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 27,
+      "head": 0,
+      "iteration": 1,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13",
+      "combined_score": Infinity,
+      "mean_beta": 0.000228806731684017,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 4,
+      "head": 17,
+      "iteration": 1,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13",
+      "combined_score": 165.23805236816406,
+      "mean_beta": 0.013259661262964073,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 18,
+      "head": 29,
+      "iteration": 1,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13",
+      "combined_score": 159.69729614257812,
+      "mean_beta": 0.0032703518081689253,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 9,
+      "head": 30,
+      "iteration": 1,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13",
+      "combined_score": 64.93528747558594,
+      "mean_beta": 0.01833865387379774,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 12,
+      "head": 19,
+      "iteration": 1,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13",
+      "combined_score": 62.499481201171875,
+      "mean_beta": 0.012391195388772758,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 12,
+      "head": 9,
+      "iteration": 1,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13",
+      "combined_score": 62.093505859375,
+      "mean_beta": 0.014366377596161328,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 13,
+      "head": 16,
+      "iteration": 1,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13",
+      "combined_score": 58.599143981933594,
+      "mean_beta": 0.008725439223780995,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 16,
+      "head": 7,
+      "iteration": 1,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13",
+      "combined_score": 51.34708023071289,
+      "mean_beta": 0.011290383281448158,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 18,
+      "head": 28,
+      "iteration": 1,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13",
+      "combined_score": 29.604082107543945,
+      "mean_beta": 0.005998146370984614,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 9,
+      "head": 6,
+      "iteration": 1,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13",
+      "combined_score": 26.944068908691406,
+      "mean_beta": 0.020021254965968183,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 23,
+      "head": 20,
+      "iteration": 1,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13",
+      "combined_score": 25.449459075927734,
+      "mean_beta": 0.0004400467878440395,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 6,
+      "head": 21,
+      "iteration": 1,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13",
+      "combined_score": 25.340015411376953,
+      "mean_beta": 0.011251183814238175,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 16,
+      "head": 14,
+      "iteration": 1,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13",
+      "combined_score": 22.913007736206055,
+      "mean_beta": 0.007442584232194349,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 18,
+      "head": 21,
+      "iteration": 2,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13, L27H0, L4H17, L18H29, L9H30, L12H19, L12H9, L13H16, L16H7, L18H28, L9H6, L23H20, L6H21, L16H14",
+      "combined_score": Infinity,
+      "mean_beta": 0.0037288618561888143,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 8,
+      "head": 25,
+      "iteration": 2,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13, L27H0, L4H17, L18H29, L9H30, L12H19, L12H9, L13H16, L16H7, L18H28, L9H6, L23H20, L6H21, L16H14",
+      "combined_score": 99.79340362548828,
+      "mean_beta": 0.00698976273270091,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 11,
+      "head": 25,
+      "iteration": 2,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13, L27H0, L4H17, L18H29, L9H30, L12H19, L12H9, L13H16, L16H7, L18H28, L9H6, L23H20, L6H21, L16H14",
+      "combined_score": 84.45532989501953,
+      "mean_beta": 0.020406494306371314,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 13,
+      "head": 21,
+      "iteration": 2,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13, L27H0, L4H17, L18H29, L9H30, L12H19, L12H9, L13H16, L16H7, L18H28, L9H6, L23H20, L6H21, L16H14",
+      "combined_score": 57.64863586425781,
+      "mean_beta": 0.00395191793631966,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 6,
+      "head": 6,
+      "iteration": 2,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13, L27H0, L4H17, L18H29, L9H30, L12H19, L12H9, L13H16, L16H7, L18H28, L9H6, L23H20, L6H21, L16H14",
+      "combined_score": 46.17457962036133,
+      "mean_beta": 0.03787795016251039,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 18,
+      "head": 5,
+      "iteration": 2,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13, L27H0, L4H17, L18H29, L9H30, L12H19, L12H9, L13H16, L16H7, L18H28, L9H6, L23H20, L6H21, L16H14",
+      "combined_score": 36.33171844482422,
+      "mean_beta": 0.006232049301615916,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 11,
+      "head": 26,
+      "iteration": 3,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13, L27H0, L4H17, L18H29, L9H30, L12H19, L12H9, L13H16, L16H7, L18H28, L9H6, L23H20, L6H21, L16H14, L18H21, L8H25, L11H25, L13H21, L6H6, L18H5",
+      "combined_score": 31.824411392211914,
+      "mean_beta": 0.005728374413592974,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 9,
+      "head": 10,
+      "iteration": 3,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13, L27H0, L4H17, L18H29, L9H30, L12H19, L12H9, L13H16, L16H7, L18H28, L9H6, L23H20, L6H21, L16H14, L18H21, L8H25, L11H25, L13H21, L6H6, L18H5",
+      "combined_score": 28.890722274780273,
+      "mean_beta": 0.019396736637645517,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 12,
+      "head": 0,
+      "iteration": 3,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13, L27H0, L4H17, L18H29, L9H30, L12H19, L12H9, L13H16, L16H7, L18H28, L9H6, L23H20, L6H21, L16H14, L18H21, L8H25, L11H25, L13H21, L6H6, L18H5",
+      "combined_score": 23.592483520507812,
+      "mean_beta": 0.012639199350815034,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 2,
+      "head": 11,
+      "iteration": 4,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13, L27H0, L4H17, L18H29, L9H30, L12H19, L12H9, L13H16, L16H7, L18H28, L9H6, L23H20, L6H21, L16H14, L18H21, L8H25, L11H25, L13H21, L6H6, L18H5, L11H26, L9H10, L12H0",
+      "combined_score": 26.356258392333984,
+      "mean_beta": 0.007590059019548789,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 9,
+      "head": 18,
+      "iteration": 4,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13, L27H0, L4H17, L18H29, L9H30, L12H19, L12H9, L13H16, L16H7, L18H28, L9H6, L23H20, L6H21, L16H14, L18H21, L8H25, L11H25, L13H21, L6H6, L18H5, L11H26, L9H10, L12H0",
+      "combined_score": 22.1678409576416,
+      "mean_beta": 0.005221262837949325,
+      "label": "hallucination promoter"
+    },
+    {
+      "layer": 8,
+      "head": 10,
+      "iteration": 5,
+      "target": "L11H31, L11H0, L13H17, L11H27, L15H31, L31H10, L12H3, L19H18, L22H6, L30H25, L8H11, L14H6, L17H20, L17H29, L24H7, L14H30, L28H26, L13H8, L21H2, L15H3, L15H7, L10H1, L12H1, L15H30, L17H13, L27H0, L4H17, L18H29, L9H30, L12H19, L12H9, L13H16, L16H7, L18H28, L9H6, L23H20, L6H21, L16H14, L18H21, L8H25, L11H25, L13H21, L6H6, L18H5, L11H26, L9H10, L12H0, L2H11, L9H18",
+      "combined_score": 21.798959732055664,
+      "mean_beta": 0.02093475468154793,
+      "label": "hallucination promoter"
+    }
+  ],
+  "iterations": [
+    [
+      {
+        "layer": 11,
+        "head": 31
+      },
+      {
+        "layer": 11,
+        "head": 0
+      },
+      {
+        "layer": 13,
+        "head": 17
+      },
+      {
+        "layer": 11,
+        "head": 27
+      },
+      {
+        "layer": 15,
+        "head": 31
+      },
+      {
+        "layer": 31,
+        "head": 10
+      },
+      {
+        "layer": 12,
+        "head": 3
+      },
+      {
+        "layer": 19,
+        "head": 18
+      },
+      {
+        "layer": 22,
+        "head": 6
+      },
+      {
+        "layer": 30,
+        "head": 25
+      },
+      {
+        "layer": 8,
+        "head": 11
+      },
+      {
+        "layer": 14,
+        "head": 6
+      },
+      {
+        "layer": 17,
+        "head": 20
+      },
+      {
+        "layer": 17,
+        "head": 29
+      },
+      {
+        "layer": 24,
+        "head": 7
+      },
+      {
+        "layer": 14,
+        "head": 30
+      },
+      {
+        "layer": 28,
+        "head": 26
+      },
+      {
+        "layer": 13,
+        "head": 8
+      },
+      {
+        "layer": 21,
+        "head": 2
+      },
+      {
+        "layer": 15,
+        "head": 3
+      },
+      {
+        "layer": 15,
+        "head": 7
+      },
+      {
+        "layer": 10,
+        "head": 1
+      },
+      {
+        "layer": 12,
+        "head": 1
+      },
+      {
+        "layer": 15,
+        "head": 30
+      },
+      {
+        "layer": 17,
+        "head": 13
+      }
+    ],
+    [
+      {
+        "layer": 27,
+        "head": 0
+      },
+      {
+        "layer": 4,
+        "head": 17
+      },
+      {
+        "layer": 18,
+        "head": 29
+      },
+      {
+        "layer": 9,
+        "head": 30
+      },
+      {
+        "layer": 12,
+        "head": 19
+      },
+      {
+        "layer": 12,
+        "head": 9
+      },
+      {
+        "layer": 13,
+        "head": 16
+      },
+      {
+        "layer": 16,
+        "head": 7
+      },
+      {
+        "layer": 18,
+        "head": 28
+      },
+      {
+        "layer": 9,
+        "head": 6
+      },
+      {
+        "layer": 23,
+        "head": 20
+      },
+      {
+        "layer": 6,
+        "head": 21
+      },
+      {
+        "layer": 16,
+        "head": 14
+      }
+    ],
+    [
+      {
+        "layer": 18,
+        "head": 21
+      },
+      {
+        "layer": 8,
+        "head": 25
+      },
+      {
+        "layer": 11,
+        "head": 25
+      },
+      {
+        "layer": 13,
+        "head": 21
+      },
+      {
+        "layer": 6,
+        "head": 6
+      },
+      {
+        "layer": 18,
+        "head": 5
+      }
+    ],
+    [
+      {
+        "layer": 11,
+        "head": 26
+      },
+      {
+        "layer": 9,
+        "head": 10
+      },
+      {
+        "layer": 12,
+        "head": 0
+      }
+    ],
+    [
+      {
+        "layer": 2,
+        "head": 11
+      },
+      {
+        "layer": 9,
+        "head": 18
+      }
+    ],
+    [
+      {
+        "layer": 8,
+        "head": 10
+      }
+    ]
+  ],
+  "params": {
+    "method": "iterative_decay",
+    "k": 50,
+    "num_layers": 32,
+    "num_heads": 32
+  }
+}

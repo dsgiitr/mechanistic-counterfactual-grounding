@@ -1,0 +1,60 @@
+Analyzing 3 counterfactual pairs...
+
+=== AVERAGED DELTA DISTRIBUTION BOUNDS (95% Confidence) ===
+Sample size (m) is equal to the layer feature dimensionality (D).
+
+Layer: attn_layer_1
+  Avg Sample Variance (s^2): 0.000004
+  Avg Hoeffding Width (eps)  : 0.001038
+  Avg Bernstein Width (eps)  : 0.000099
+--------------------------------------------------
+Layer: attn_layer_14
+  Avg Sample Variance (s^2): 0.001880
+  Avg Hoeffding Width (eps)  : 0.009049
+  Avg Bernstein Width (eps)  : 0.001901
+--------------------------------------------------
+Layer: attn_layer_15
+  Avg Sample Variance (s^2): 0.000626
+  Avg Hoeffding Width (eps)  : 0.003976
+  Avg Bernstein Width (eps)  : 0.001084
+--------------------------------------------------
+Layer: attn_layer_17
+  Avg Sample Variance (s^2): 0.000388
+  Avg Hoeffding Width (eps)  : 0.003438
+  Avg Bernstein Width (eps)  : 0.000862
+--------------------------------------------------
+Layer: attn_layer_7
+  Avg Sample Variance (s^2): 0.000014
+  Avg Hoeffding Width (eps)  : 0.000940
+  Avg Bernstein Width (eps)  : 0.000169
+--------------------------------------------------
+Layer: final_layer_norm
+  Avg Sample Variance (s^2): 0.002166
+  Avg Hoeffding Width (eps)  : 0.015031
+  Avg Bernstein Width (eps)  : 0.002062
+--------------------------------------------------
+Layer: mlp_layer_2
+  Avg Sample Variance (s^2): 0.000004
+  Avg Hoeffding Width (eps)  : 0.000490
+  Avg Bernstein Width (eps)  : 0.000088
+--------------------------------------------------
+Layer: mlp_layer_27
+  Avg Sample Variance (s^2): 0.000322
+  Avg Hoeffding Width (eps)  : 0.005692
+  Avg Bernstein Width (eps)  : 0.000774
+--------------------------------------------------
+Layer: mlp_layer_5
+  Avg Sample Variance (s^2): 0.000010
+  Avg Hoeffding Width (eps)  : 0.001064
+  Avg Bernstein Width (eps)  : 0.000149
+--------------------------------------------------
+Layer: mlp_layer_6
+  Avg Sample Variance (s^2): 0.000014
+  Avg Hoeffding Width (eps)  : 0.001174
+  Avg Bernstein Width (eps)  : 0.000173
+--------------------------------------------------
+Layer: mlp_layer_8
+  Avg Sample Variance (s^2): 0.000023
+  Avg Hoeffding Width (eps)  : 0.001113
+  Avg Bernstein Width (eps)  : 0.000217
+--------------------------------------------------
