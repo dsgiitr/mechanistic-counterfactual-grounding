@@ -30,6 +30,8 @@ def find_circuit(adj, num_layers=32, num_heads=32, num_outliers=2):
         iterations: list of lists showing what was selected per iteration
     """
     N = num_layers * num_heads
+    if num_outliers <= 0:
+        raise ValueError("num_outliers must be positive")
     head_combined = adj["head_combined"]  # (N, N)
     logit_combined = adj["logit_combined"]  # (N,)
     logit_mean_beta = adj["logit_mean_beta"]  # (N,)
@@ -46,7 +48,10 @@ def find_circuit(adj, num_layers=32, num_heads=32, num_outliers=2):
     logit_scores_masked = logit_combined.clone()
     logit_scores_masked[logit_mean_beta <= 0] = -1.0
     
-    top_logit_indices = torch.argsort(logit_scores_masked, descending=True)[:num_outliers]
+    valid_indices = torch.where((logit_mean_beta > 0) & (logit_combined > 0) & torch.isfinite(logit_combined))[0]
+    if valid_indices.numel() == 0:
+        raise ValueError("No positive-contribution logit-facing heads found")
+    top_logit_indices = valid_indices[torch.argsort(logit_combined[valid_indices], descending=True)[:num_outliers]]
     
     circuit = []
     iterations = []
@@ -149,7 +154,7 @@ def main(args):
     
     # Infer dimensions from the matrix
     N = adj["head_combined"].shape[0]
-    num_heads = args.num_heads
+    num_heads = args.num_heads or adj.get("num_heads", 32)
     num_layers = N // num_heads
     
     print(f"Matrix size: {N} nodes ({num_layers} layers x {num_heads} heads)")
@@ -187,7 +192,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Find circuit from precomputed adjacency matrix (no GPU needed)")
     parser.add_argument("--matrix_path", type=str, required=True, help="Path to adjacency_matrix.pt")
     parser.add_argument("--num_outliers", type=int, default=2, help="Number of top nodes to keep per iteration")
-    parser.add_argument("--num_heads", type=int, default=32, help="Number of attention heads per layer")
+    parser.add_argument("--num_heads", type=int, default=None, help="Number of attention heads per layer")
     parser.add_argument("--output", type=str, default="circuit_result.json", help="Output JSON file")
     
     args = parser.parse_args()

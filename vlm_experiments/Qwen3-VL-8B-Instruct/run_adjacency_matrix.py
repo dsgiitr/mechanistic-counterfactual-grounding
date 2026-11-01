@@ -1,14 +1,18 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 import argparse
 import json
 import torch
-from pyfunctions.wrappers import Node
+from pyfunctions.nodes import Node
 from models.qwen3_instruct_wrapper import Qwen3InstructWrapper
 from tasks.hallucination_vlm import HallucinationDataset
 from methods.hallucination_circuit import build_adjacency_matrix
 
 def run_adjacency_matrix(args):
     """
-    Builds the full 1024x1024 adjacency matrix and saves it to disk.
+    Builds the native decoder head adjacency matrix and saves it to disk.
     This is the heavy GPU pass; circuit discovery happens offline afterward.
     """
     print(f"Loading wrapper for {args.model_id} on {args.device}...")
@@ -41,6 +45,7 @@ def run_adjacency_matrix(args):
     
     # Save entire adjacency data
     output_path = args.output
+    adj.update({"num_heads": wrapper.num_heads, "num_layers": wrapper.num_layers, "model_id": args.model_id})
     torch.save(adj, output_path)
     print(f"Adjacency matrix saved to {output_path}")
     
@@ -65,11 +70,11 @@ def run_adjacency_matrix(args):
         print(f"  #{rank+1}: L{layer}H{head} combined={score:.4f} ({label})")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Build the 1024x1024 CD-T adjacency matrix")
+    parser = argparse.ArgumentParser(description="Build the native decoder CD-T adjacency matrix")
     parser.add_argument("--dataset_path", type=str, required=True, help="Path to JSON file of hallucination examples")
     parser.add_argument("--correct_path", type=str, default=None, help="Path to JSON file of correct examples")
     parser.add_argument("--mean_activations_path", type=str, default=None, help="Path to precomputed mean activations .pt file")
-    parser.add_argument("--model_id", type=str, default="Qwen/Qwen3Instruct")
+    parser.add_argument("--model_id", type=str, default="Qwen/Qwen3-VL-8B-Instruct")
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--output", type=str, default="adjacency_matrix.pt", help="Output file for adjacency matrix")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for source node evaluation")

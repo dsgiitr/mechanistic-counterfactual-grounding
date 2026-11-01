@@ -1,3 +1,8 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from methods.restoration_effects import decoder_backbone
+
 import os
 import json
 import torch
@@ -7,11 +12,7 @@ from transformers import AutoProcessor, LlavaForConditionalGeneration
 
 
 def get_llm_backbone(model):
-    """Return the LLaMA backbone across Transformers layout variants."""
-    language_model = model.language_model
-    if hasattr(language_model, "model"):
-        return language_model.model
-    return language_model
+    return decoder_backbone(model)
 
 
 def get_input_device(model):

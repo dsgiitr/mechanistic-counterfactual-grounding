@@ -2,15 +2,27 @@ import torch
 import torch.nn as nn
 import math
 from transformers.models.llama.modeling_llama import apply_rotary_pos_emb
-from pyfunctions.cdt_core import normalize_rel_irrel
-from pyfunctions.wrappers import Node
+from pyfunctions.decomposition import normalize_rel_irrel
+from pyfunctions.nodes import Node
 from tqdm import tqdm
+from models.native_utils import factual_context
+
+
+def causal_attention_mask(seq_len, device, dtype):
+    """Additive decoder mask: past/current tokens are zero, future tokens blocked."""
+    return torch.triu(
+        torch.full((seq_len, seq_len), torch.finfo(dtype).min, device=device, dtype=dtype),
+        diagonal=1,
+    )[None, None]
 
 def prop_rmsnorm(rel, irrel, rmsnorm_module):
     tot = rel + irrel
-    variance = tot.pow(2).mean(-1, keepdim=True)
-    scale = torch.rsqrt(variance + rmsnorm_module.variance_epsilon) * rmsnorm_module.weight
-    return rel * scale, irrel * scale
+    variance = tot.float().pow(2).mean(-1, keepdim=True)
+    epsilon = getattr(rmsnorm_module, "variance_epsilon", getattr(rmsnorm_module, "eps", None))
+    scale = torch.rsqrt(variance + epsilon)
+    # Match native Llama's fp32 accumulation and cast before learned scaling.
+    return ((rel.float() * scale).to(tot.dtype) * rmsnorm_module.weight,
+            (irrel.float() * scale).to(tot.dtype) * rmsnorm_module.weight)
 
 def prop_llama_mlp(rel, irrel, mlp_module):
     rel_gate = torch.matmul(rel, mlp_module.gate_proj.weight.T)
@@ -38,6 +50,9 @@ def prop_llama_attention(rel, irrel, attention_mask, position_ids, attn_module,
     num_heads = getattr(attn_module, 'num_heads', cfg.num_attention_heads if cfg else None)
     head_dim = getattr(attn_module, 'head_dim', cfg.hidden_size // num_heads if cfg else None)
     hidden_size = num_heads * head_dim
+    num_kv_heads = getattr(cfg, "num_key_value_heads", num_heads)
+    if num_heads % num_kv_heads:
+        raise ValueError("Attention query heads must be divisible by KV heads")
 
     # Q, K, V Projections
     rel_q = torch.matmul(rel, attn_module.q_proj.weight.T)
@@ -46,14 +61,22 @@ def prop_llama_attention(rel, irrel, attention_mask, position_ids, attn_module,
     irrel_k = torch.matmul(irrel, attn_module.k_proj.weight.T)
     rel_v = torch.matmul(rel, attn_module.v_proj.weight.T)
     irrel_v = torch.matmul(irrel, attn_module.v_proj.weight.T)
+    for name, tensor in (("q_proj", irrel_q), ("k_proj", irrel_k), ("v_proj", irrel_v)):
+        bias = getattr(attn_module, name).bias
+        if bias is not None:
+            tensor.add_(bias)
     
     # Reshape for heads
     rel_q = rel_q.view(bsz, q_len, num_heads, head_dim).transpose(1, 2)
     irrel_q = irrel_q.view(bsz, q_len, num_heads, head_dim).transpose(1, 2)
-    rel_k = rel_k.view(bsz, q_len, num_heads, head_dim).transpose(1, 2)
-    irrel_k = irrel_k.view(bsz, q_len, num_heads, head_dim).transpose(1, 2)
-    rel_v = rel_v.view(bsz, q_len, num_heads, head_dim).transpose(1, 2)
-    irrel_v = irrel_v.view(bsz, q_len, num_heads, head_dim).transpose(1, 2)
+    rel_k = rel_k.view(bsz, q_len, num_kv_heads, head_dim).transpose(1, 2)
+    irrel_k = irrel_k.view(bsz, q_len, num_kv_heads, head_dim).transpose(1, 2)
+    rel_v = rel_v.view(bsz, q_len, num_kv_heads, head_dim).transpose(1, 2)
+    irrel_v = irrel_v.view(bsz, q_len, num_kv_heads, head_dim).transpose(1, 2)
+    # Qwen3 normalizes each query/key head before applying its native mRoPE.
+    if hasattr(attn_module, "q_norm"):
+        rel_q, irrel_q = prop_rmsnorm(rel_q, irrel_q, attn_module.q_norm)
+        rel_k, irrel_k = prop_rmsnorm(rel_k, irrel_k, attn_module.k_norm)
     
     # RoPE
     if hasattr(attn_module, "rotary_emb"):
@@ -65,19 +88,25 @@ def prop_llama_attention(rel, irrel, attention_mask, position_ids, attn_module,
         
     rel_q, rel_k = apply_rotary_pos_emb(rel_q, rel_k, cos, sin)
     irrel_q, irrel_k = apply_rotary_pos_emb(irrel_q, irrel_k, cos, sin)
+    repeats = num_heads // num_kv_heads
+    rel_k, irrel_k, rel_v, irrel_v = [
+        value.repeat_interleave(repeats, dim=1)
+        for value in (rel_k, irrel_k, rel_v, irrel_v)
+    ]
     
     # Dot product
     tot_q = rel_q + irrel_q
     tot_k = rel_k + irrel_k
-    tot_scores = torch.matmul(tot_q, tot_k.transpose(2, 3)) / math.sqrt(head_dim)
-    rel_scores = torch.matmul(rel_q, rel_k.transpose(2, 3)) / math.sqrt(head_dim)
+    scaling = getattr(attn_module, "scaling", head_dim ** -0.5)
+    tot_scores = torch.matmul(tot_q, tot_k.transpose(2, 3)) * scaling
+    rel_scores = torch.matmul(rel_q, rel_k.transpose(2, 3)) * scaling
     
     if attention_mask is not None:
         tot_scores += attention_mask
         rel_scores += attention_mask
         
-    tot_probs = nn.functional.softmax(tot_scores, dim=-1)
-    rel_probs = nn.functional.softmax(rel_scores, dim=-1)
+    tot_probs = nn.functional.softmax(tot_scores, dim=-1, dtype=torch.float32).to(rel.dtype)
+    rel_probs = nn.functional.softmax(rel_scores, dim=-1, dtype=torch.float32).to(rel.dtype)
     irrel_probs = tot_probs - rel_probs
     
     # Multiply by V
@@ -134,6 +163,8 @@ def prop_llama_attention(rel, irrel, attention_mask, position_ids, attn_module,
     # Output projection
     rel_out = torch.matmul(rel_context, attn_module.o_proj.weight.T)
     irrel_out = torch.matmul(irrel_context, attn_module.o_proj.weight.T)
+    if attn_module.o_proj.bias is not None:
+        irrel_out = irrel_out + attn_module.o_proj.bias
     return rel_out, irrel_out, rel_context_heads, irrel_context_heads
 
 def prop_llama_layer(rel, irrel, layer_module, attention_mask, position_ids, 
@@ -156,99 +187,60 @@ def prop_llama_layer(rel, irrel, layer_module, attention_mask, position_ids,
     normalize_rel_irrel(rel_out, irrel_out)
     return rel_out, irrel_out, rel_ctx_heads, irrel_ctx_heads
 
-def prop_LLaVA(dataset, ablated_batch, base_embeds, mean_c):
-    """
-    Runs a batched custom forward propagation from layer 0 to final layer norm.
-    ablated_batch: List[List[Node]] specifying ablations for each item in the batch.
-    base_embeds: The extracted input embeddings for the example, shape (1, seq_len, hidden_dim).
-    """
+def prop_decoder(dataset, ablated_batch, base_embeds, mean_c, return_intermediates=False):
+    """CD through native Llama/Qwen3 decoder geometry captured on the factual run."""
     wrapper = dataset.wrapper
-    device = wrapper.device
-    if hasattr(wrapper.language_model, 'layers'):
-        model = wrapper.language_model
+    model = wrapper.language_model
+    if not hasattr(model, "layers"):
+        model = model.model
+    batch_size = len(ablated_batch)
+    length = base_embeds.shape[1]
+    irrel = base_embeds.expand(batch_size, -1, -1).clone()
+    rel = torch.zeros_like(irrel)
+    context = getattr(wrapper, "propagation_context", None)
+    if context is not None:
+        if context["base_embeds"].shape != base_embeds.shape:
+            raise ValueError("Decoder context does not match the current factual input")
+        position_ids = context["position_ids"]
+        mask = context["attention_mask"]
+        # SDPA can omit a causal mask on a prefill; this manual attention path cannot.
+        if mask is None:
+            mask = causal_attention_mask(length, base_embeds.device, base_embeds.dtype)
+        elif mask.dtype == torch.bool:
+            mask = torch.zeros_like(mask, dtype=base_embeds.dtype).masked_fill(~mask, torch.finfo(base_embeds.dtype).min)
+        position_embeddings = context["position_embeddings"]
     else:
-        model = wrapper.language_model.model
-        
-    bsz = len(ablated_batch)
-    seq_len = base_embeds.shape[1]
-    
-    # Expand embeddings for the batch
-    embeds = base_embeds.expand(bsz, -1, -1)
-    
-    # Initialize rel=0, irrel=embeds
-    irrel = embeds.clone()
-    rel = torch.zeros_like(embeds)
-    
-    # Setup masks
-    position_ids = torch.arange(seq_len, dtype=torch.long, device=device).unsqueeze(0)
-    
-    mask = torch.ones((1, 1, 1, seq_len), device=device, dtype=torch.float16)  # shape needed for broadcast
-    mask = (1.0 - mask) * torch.finfo(torch.float16).min
-    causal_mask = torch.tril(torch.ones((seq_len, seq_len), device=device)).unsqueeze(0).unsqueeze(0)
-    causal_mask = (1.0 - causal_mask) * torch.finfo(torch.float16).min
-    full_mask = torch.maximum(mask, causal_mask.to(torch.float16))
-    
-    position_embeddings = None
-    if hasattr(model, "rotary_emb"):
-        # Calculate RoPE once for base embed size
-        position_embeddings = model.rotary_emb(base_embeds, position_ids)
+        if getattr(model.config, "model_type", "") == "qwen3_vl_text":
+            raise ValueError("Capture the native Qwen3 decoder context before propagation")
+        position_ids = torch.arange(length, device=base_embeds.device).unsqueeze(0)
+        mask = causal_attention_mask(length, base_embeds.device, base_embeds.dtype)
+        position_embeddings = model.rotary_emb(base_embeds, position_ids) if hasattr(model, "rotary_emb") else None
+    deepstack = context.get("deepstack_visual_embeds") if context else None
+    visual_mask = context.get("visual_pos_masks") if context else None
+    intermediates = {}
+    for layer_idx, layer in enumerate(model.layers):
+        rel, irrel, rel_heads, irrel_heads = prop_llama_layer(
+            rel, irrel, layer, mask, position_ids, layer_idx, ablated_batch,
+            mean_c[layer_idx], position_embeddings=position_embeddings)
+        if return_intermediates:
+            intermediates[layer_idx] = (rel_heads, irrel_heads)
+        # Native Qwen3 adds fixed vision-encoder features after early decoder layers.
+        # These are background inputs, not contributions from a decoder source head.
+        if deepstack is not None and layer_idx < len(deepstack):
+            injection = torch.zeros_like(base_embeds)
+            injection[visual_mask] = deepstack[layer_idx].to(injection)
+            irrel = irrel + injection.expand_as(irrel)
+    rel, irrel = prop_rmsnorm(rel, irrel, model.norm)
+    return (rel, irrel, intermediates) if return_intermediates else (rel, irrel)
 
-    for i, layer_module in enumerate(model.layers):
-        mean_c_layer = mean_c[i]
-        rel, irrel, _, _ = prop_llama_layer(
-            rel, irrel, layer_module, full_mask, position_ids, i, ablated_batch, mean_c_layer,
-            position_embeddings=position_embeddings
-        )
-        
-    rel_final, irrel_final = prop_rmsnorm(rel, irrel, model.norm)
-    return rel_final, irrel_final
+
+def prop_LLaVA(dataset, ablated_batch, base_embeds, mean_c):
+    # Compatibility name retained for existing experiment scripts.
+    return prop_decoder(dataset, ablated_batch, base_embeds, mean_c)
+
 
 def prop_LLaVA_with_intermediates(dataset, ablated_batch, base_embeds, mean_c):
-    """
-    Same as prop_LLaVA, but additionally returns per-layer intermediate head decompositions.
-    Returns:
-        rel_final, irrel_final: final residual stream decomposition
-        intermediates: dict mapping layer_idx -> (rel_ctx_heads, irrel_ctx_heads)
-            each of shape (bsz, num_heads, seq_len, head_dim)
-    """
-    wrapper = dataset.wrapper
-    device = wrapper.device
-    if hasattr(wrapper.language_model, 'layers'):
-        model = wrapper.language_model
-    else:
-        model = wrapper.language_model.model
-        
-    bsz = len(ablated_batch)
-    seq_len = base_embeds.shape[1]
-    
-    embeds = base_embeds.expand(bsz, -1, -1)
-    
-    irrel = embeds.clone()
-    rel = torch.zeros_like(embeds)
-    
-    position_ids = torch.arange(seq_len, dtype=torch.long, device=device).unsqueeze(0)
-    
-    mask = torch.ones((1, 1, 1, seq_len), device=device, dtype=torch.float16)
-    mask = (1.0 - mask) * torch.finfo(torch.float16).min
-    causal_mask = torch.tril(torch.ones((seq_len, seq_len), device=device)).unsqueeze(0).unsqueeze(0)
-    causal_mask = (1.0 - causal_mask) * torch.finfo(torch.float16).min
-    full_mask = torch.maximum(mask, causal_mask.to(torch.float16))
-    
-    position_embeddings = None
-    if hasattr(model, "rotary_emb"):
-        position_embeddings = model.rotary_emb(base_embeds, position_ids)
-
-    intermediates = {}
-    for i, layer_module in enumerate(model.layers):
-        mean_c_layer = mean_c[i]
-        rel, irrel, rel_ctx_heads, irrel_ctx_heads = prop_llama_layer(
-            rel, irrel, layer_module, full_mask, position_ids, i, ablated_batch, mean_c_layer,
-            position_embeddings=position_embeddings
-        )
-        intermediates[i] = (rel_ctx_heads, irrel_ctx_heads)
-        
-    rel_final, irrel_final = prop_rmsnorm(rel, irrel, model.norm)
-    return rel_final, irrel_final, intermediates
+    return prop_decoder(dataset, ablated_batch, base_embeds, mean_c, True)
 
 def build_adjacency_matrix(dataset, source_nodes, yes_no=False, batch_size=32):
     """
@@ -322,15 +314,8 @@ def build_adjacency_matrix(dataset, source_nodes, yes_no=False, batch_size=32):
         # Get mean activations and base embeddings
         mean_c = dataset.get_mean_correct(vis_pos, q_pos, ans_pos)
         
-        prompt = wrapper.get_prompt(example["question"])
-        inputs = wrapper.processor(text=prompt, images=example["image_loaded"], return_tensors="pt")
-        if "pixel_values" in inputs:
-            inputs["pixel_values"] = inputs["pixel_values"].to(torch.float16)
-        inputs = {k: v.to(wrapper.device) if torch.is_tensor(v) else v for k, v in inputs.items()}
-        
-        with torch.no_grad():
-            outputs = wrapper.model(**inputs, output_hidden_states=True, return_dict=True)
-            base_embeds = outputs.hidden_states[0].to(torch.float16)
+        inputs, outputs, base_embeds = factual_context(
+            wrapper, example["image_loaded"], example["question"], example.get("answer_prefix", ""), example.get("answer_prefix_token_ids"))
         
         # Also run a clean forward pass to get the CLEAN activations for d_T directions.
         # The wrapper hooks already captured them during the forward pass above.
@@ -475,15 +460,8 @@ def score_nodes(dataset, source_nodes, current_circuit, yes_no=False, batch_size
         # Calculate mean context and get base embeddings ONCE for the whole sample
         mean_c = dataset.get_mean_correct(vis_pos, q_pos, ans_pos)
         
-        prompt = wrapper.get_prompt(example["question"])
-        inputs = wrapper.processor(text=prompt, images=example["image_loaded"], return_tensors="pt")
-        if "pixel_values" in inputs:
-            inputs["pixel_values"] = inputs["pixel_values"].to(torch.float16)
-        inputs = {k: v.to(wrapper.device) if torch.is_tensor(v) else v for k, v in inputs.items()}
-        
-        with torch.no_grad():
-            outputs = wrapper.model(**inputs, output_hidden_states=True, return_dict=True)
-            base_embeds = outputs.hidden_states[0].to(torch.float16)
+        inputs, outputs, base_embeds = factual_context(
+            wrapper, example["image_loaded"], example["question"], example.get("answer_prefix", ""), example.get("answer_prefix_token_ids"))
             
         # Batch evaluation
         for b_start in tqdm(range(0, len(source_nodes), batch_size), desc=f"Batches (Example {idx})", leave=False):
@@ -535,41 +513,5 @@ def score_nodes(dataset, source_nodes, current_circuit, yes_no=False, batch_size
     return scores
 
 def compute_faithfulness(dataset, circuit, yes_no=False):
-    """
-    Step 9: Computes the faithfulness of the discovered circuit.
-    m(C) = mean over examples i [d_i . h_final_C_i]
-    """
-    wrapper = dataset.wrapper
-    m_c_sum = 0
-    m_c_correct_sum = 0
-    
-    # Precompute fixed direction for Yes/No tasks
-    if yes_no:
-        yes_id = wrapper.get_correct_token_id("Yes")
-        no_id = wrapper.get_correct_token_id("No")
-        raw_d = wrapper.W_U[yes_id] - wrapper.W_U[no_id]
-        fixed_d_hall = raw_d / torch.norm(raw_d, p=2)
-        fixed_d_corr = -fixed_d_hall
-    
-    for i, example in tqdm(enumerate(dataset.hallucination_examples), total=len(dataset.hallucination_examples), desc="Computing faithfulness"):
-        if yes_no:
-            d_i_hall = fixed_d_hall
-            d_i_corr = fixed_d_corr
-        else:
-            hall_id = example["hallucinated_token_id"]
-            corr_id = example["correct_token_id"]
-            d_i_hall = wrapper.W_U[hall_id] - wrapper.W_U[corr_id]
-            d_i_hall = d_i_hall / torch.norm(d_i_hall, p=2)
-            d_i_corr = -d_i_hall
-        
-        # When only heads in circuit C are active (all others mean-ablated)
-        # Wait, the prompt says: "h_final_C_i is the final residual stream when only heads 
-        # in circuit C are active (all others mean-ablated)."
-        # So we construct an ablation list containing ALL heads NOT in C.
-        all_heads = [] # TODO: implement all heads 
-        
-        # Then run prop_LLaVA using all_heads_except_C as ablated_nodes
-        # Since this involves all heads not in C, we need to gather them.
-        pass
-    
-    return m_c_sum / max(1, len(dataset.hallucination_examples))
+    from methods.faithfulness import evaluate_faithfulness
+    return evaluate_faithfulness(dataset, circuit, yes_no)["overall_faithfulness"]

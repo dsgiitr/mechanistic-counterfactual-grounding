@@ -1,21 +1,21 @@
 import json
 import argparse
+try:
+    from .common import aligned_records
+except ImportError:
+    from common import aligned_records
 
 def evaluate_coco_context_recall(predictions_file, ground_truth_file):
     """
     Evaluates COCO Context Recall (Recall_ctx).
-    Recall_ctx = |C_pred \cap C_gold| / |C_gold|
+    Recall_ctx = |C_pred intersect C_gold| / |C_gold|
     where C_pred is the set of grounded concepts recovered by the model,
     and C_gold is the reference context set.
     """
-    with open(predictions_file, 'r') as f:
-        preds = [json.loads(line) for line in f]
-        
-    with open(ground_truth_file, 'r') as f:
-        truths = [json.loads(line) for line in f]
+    preds, truths = aligned_records(predictions_file, ground_truth_file)
         
     total_recall = 0.0
-    count = len(preds)
+    count = 0
     
     for p, t in zip(preds, truths):
         # Extract sets of concepts. Assume they are provided as lists in JSON.
@@ -25,11 +25,14 @@ def evaluate_coco_context_recall(predictions_file, ground_truth_file):
         if not c_gold:
             continue
             
+        count += 1
         intersection = c_pred.intersection(c_gold)
         recall = len(intersection) / len(c_gold)
         total_recall += recall
         
-    avg_recall = total_recall / count if count > 0 else 0
+    if count == 0:
+        raise ValueError("No nonempty reference concept sets to evaluate")
+    avg_recall = total_recall / count
     print(f"COCO Context Recall (Recall_ctx): {avg_recall:.4f}")
     return avg_recall
 

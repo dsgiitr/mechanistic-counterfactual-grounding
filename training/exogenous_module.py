@@ -37,10 +37,11 @@ class ExogenousVariableModule(nn.Module):
             n_correct=correct.sum().item()
             n_incorrect=(1-correct).sum().item()
 
-            self.alpha_v=self.alpha_v+n_correct
-            self.beta_v=self.beta_v+n_incorrect
-            self.alpha_q=self.alpha_q+n_correct
-            self.beta_q=self.beta_q+n_incorrect
+            self.alpha_v.add_(n_correct)
+            self.beta_v.add_(n_incorrect)
+            self.alpha_q.add_(n_correct)
+            self.beta_q.add_(n_incorrect)
+            self.n_updates.add_(1)
 
     def sample_u(
             self,
@@ -59,7 +60,7 @@ class ExogenousVariableModule(nn.Module):
             
             dist=Beta(alpha.clamp(min=1e-6),beta.clamp(min=1e-6))
             u=dist.sample((batch_size,))
-            u=u.clmap(0.0,1.0-1e-6)
+            u=u.clamp(0.0,1.0-1e-6)
 
             if device is not None:
                 u=u.to(device)

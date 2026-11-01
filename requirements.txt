@@ -11,12 +11,12 @@ transformers
 scikit-learn
 nltk
 setuptools
-einsum
+fancy-einsum
 torchtyping
 
 torch>=2.0.0
 torchvision>=0.15.0
-transformers>=4.37.0
+transformers>=4.57.0
 accelerate>=0.27.0
 bitsandbytes>=0.43.1
 peft>=0.8.0

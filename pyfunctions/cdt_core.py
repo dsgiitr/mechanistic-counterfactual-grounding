@@ -17,18 +17,7 @@ It also contains some basic utility functions for dealing with models, especiall
 # Problems may arise when rel and irrel have different signs in the same position.
 # The important invariants to preserve are that the relative magnitudes of rel and irrel are maintained,
 # and that rel + irrel = tot.
-def normalize_rel_irrel(rel, irrel):
-    tot = rel + irrel
-    tot_mask = (rel * irrel) < 0
-    rel_mask = tot_mask & (rel.abs() >= irrel.abs())
-    irrel_mask = tot_mask & (~rel_mask)
-    
-    rel[rel_mask] = tot[rel_mask]
-    rel[irrel_mask] = 0
-    
-    irrel[irrel_mask] = tot[irrel_mask]
-    irrel[rel_mask] = 0
-
+from pyfunctions.decomposition import normalize_rel_irrel
             
 def get_encoding(text, tokenizer, device, max_seq_len=512):
     encoding = tokenizer.encode_plus(text, 

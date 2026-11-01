@@ -1,4 +1,5 @@
 import os
+from contextlib import contextmanager
 from typing import Dict, Optional
 
 import torch
@@ -6,8 +7,8 @@ import torch.nn as nn
 from peft import LoraConfig, TaskType, get_peft_model
 from transformers import BitsAndBytesConfig, LlavaForConditionalGeneration
 
-from counterfactual_gen import CounterFactualGenerator
-from exogenous_module import ExogenousVariableModule
+from methods.counterfactual_gen import CounterFactualGenerator
+from training.exogenous_module import ExogenousVariableModule
 
 
 class VQAHead(nn.Module):
@@ -55,7 +56,7 @@ class LLaVACVL(nn.Module):
         beta_alpha0: float = 0.1,
         beta_beta0: float = 0.1,
         intervene_vision: bool = True,
-        intervene_language: bool = True,
+        intervene_language: bool = False,
     ):
         super().__init__()
         os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
@@ -146,9 +147,14 @@ class LLaVACVL(nn.Module):
             pixel_values=pixel_values,
             output_hidden_states=True,
             return_dict=True,
+            use_cache=False,
         )
         hidden_states = outputs.hidden_states[-1]
-        seq_lens = attention_mask.sum(dim=1) - 1
+        # Last non-padding position works for both left and right padding.
+        positions = torch.arange(attention_mask.size(1), device=hidden_states.device)
+        seq_lens = positions.expand_as(attention_mask).masked_fill(
+            attention_mask.to(hidden_states.device) == 0, -1
+        ).max(dim=1).values
         batch_indices = torch.arange(hidden_states.size(0), device=hidden_states.device)
         seq_lens = seq_lens.clamp(min=0, max=hidden_states.size(1) - 1)
         pooled = hidden_states[batch_indices, seq_lens]
@@ -171,6 +177,49 @@ class LLaVACVL(nn.Module):
             rand_pixel_values = torch.roll(pixel_values, shifts=1, dims=0)
         return rand_input_ids, rand_attention_mask, rand_pixel_values
 
+    @contextmanager
+    def _embedding_hooks(self, vision=None, language=None, capture=None):
+        """Replace/capture projected visual and token embeddings before fusion."""
+        handles = []
+        def hook_for(name, replacement):
+            def hook(module, args, output):
+                if capture is not None:
+                    capture[name] = output
+                return replacement if replacement is not None else output
+            return hook
+        try:
+            handles.append(self.llava.model.multi_modal_projector.register_forward_hook(hook_for("vision", vision)))
+            handles.append(self.llava.get_input_embeddings().register_forward_hook(hook_for("language", language)))
+            yield
+        finally:
+            for handle in handles:
+                handle.remove()
+
+    def _aligned_language_donor(self, factual, donor, input_ids, donor_ids, attention_mask, donor_mask):
+        """Align donor text tokens, preserving factual padding and image slots."""
+        aligned = factual.detach().clone()
+        image_id = self.llava.config.image_token_index
+        protected_ids = [image_id, self.llava.config.pad_token_id,
+                         self.llava.config.text_config.bos_token_id,
+                         self.llava.config.text_config.eos_token_id]
+        def text_mask(ids, mask):
+            valid = mask.bool().clone()
+            for token in protected_ids:
+                if token is not None:
+                    valid &= ids != token
+            return valid
+        factual_mask = text_mask(input_ids, attention_mask)
+        random_mask = text_mask(donor_ids, donor_mask)
+        for batch in range(factual.shape[0]):
+            positions = factual_mask[batch].nonzero(as_tuple=True)[0]
+            source = donor[batch, random_mask[batch]]
+            if positions.numel() and not source.shape[0]:
+                raise ValueError("Language donor contains no usable text tokens")
+            if positions.numel():
+                indices = torch.arange(positions.numel(), device=source.device) % source.shape[0]
+                aligned[batch, positions] = source[indices].to(aligned)
+        return aligned
+
     def forward(
         self,
         input_ids: torch.Tensor,
@@ -182,7 +231,12 @@ class LLaVACVL(nn.Module):
         rand_attention_mask: Optional[torch.Tensor] = None,
         rand_pixel_values: Optional[torch.Tensor] = None,
     ) -> Dict[str, torch.Tensor]:
-        pooled = self._encode_and_pool(input_ids, attention_mask, pixel_values)
+        factual_embeddings = {}
+        if run_counterfactual:
+            with self._embedding_hooks(capture=factual_embeddings):
+                pooled = self._encode_and_pool(input_ids, attention_mask, pixel_values)
+        else:
+            pooled = self._encode_and_pool(input_ids, attention_mask, pixel_values)
         logits = self.vqa_head(pooled)
 
         outputs: Dict[str, torch.Tensor] = {"logits": logits}
@@ -204,11 +258,48 @@ class LLaVACVL(nn.Module):
                 cf_attention_mask = torch.ones_like(cf_input_ids)
             else:
                 cf_attention_mask = (cf_input_ids != pad_token_id).long()
-        cf_pooled = self._encode_and_pool(
-            cf_input_ids,
-            cf_attention_mask,
-            cf_pixel_values,
+        donor_embeddings = {}
+        with torch.no_grad(), self._embedding_hooks(capture=donor_embeddings):
+            self._encode_and_pool(cf_input_ids, cf_attention_mask, cf_pixel_values)
+        vision = factual_embeddings["vision"]
+        language = factual_embeddings["language"]
+        donor_vision = donor_embeddings["vision"].detach()
+        if donor_vision.shape != vision.shape:
+            raise ValueError("Visual donor and factual projected embeddings must match in shape")
+        donor_language = self._aligned_language_donor(
+            language, donor_embeddings["language"], input_ids, cf_input_ids,
+            attention_mask, cf_attention_mask,
         )
+        u_v, u_q = self.exogenous_module(input_ids.size(0), vision.device)
+
+        # Replacement hooks must remain effective through the inner gradient
+        # computation. Checkpoint recomputation after hook removal would use
+        # factual embeddings, so these CF forwards run without checkpointing.
+        checkpointing_flags = [(module, module.gradient_checkpointing)
+                               for module in self.llava.modules()
+                               if hasattr(module, "gradient_checkpointing")]
+        for module, _ in checkpointing_flags:
+            module.gradient_checkpointing = False
+        try:
+            def fusion(v, q):
+                with self._embedding_hooks(vision=v, language=q):
+                    return self.vqa_head(self._encode_and_pool(input_ids, attention_mask, pixel_values))
+            if answer_idx is not None and self.training:
+                with torch.enable_grad():
+                    u_v, u_q = self.cf_generator.optimize_u_for_intervention(
+                        vision, language, donor_vision, donor_language, u_v, u_q,
+                        answer_idx, fusion,
+                    )
+            cf_vision, cf_language = self.cf_generator.generate(
+                vision, language, donor_vision, donor_language, u_v, u_q,
+            )
+            with self._embedding_hooks(vision=cf_vision, language=cf_language):
+                cf_pooled = self._encode_and_pool(input_ids, attention_mask, pixel_values)
+        finally:
+            # Restore flags directly: gradient_checkpointing_enable() can add
+            # input-gradient hooks on every call in some Transformers versions.
+            for module, enabled in checkpointing_flags:
+                module.gradient_checkpointing = enabled
         logits_cf = self.vqa_head(cf_pooled)
 
         if answer_idx is None:

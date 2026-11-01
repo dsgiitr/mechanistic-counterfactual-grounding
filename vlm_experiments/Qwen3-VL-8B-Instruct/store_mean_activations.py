@@ -4,11 +4,10 @@ import json
 import os
 from collections import defaultdict
 from tqdm import tqdm
-from datasets import load_dataset
 from PIL import Image
 
 import sys
-project_root = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
@@ -23,8 +22,8 @@ def store_mean_activations(args):
     wrapper = Qwen3InstructWrapper(model_id=args.model_id, device=args.device)
     
     print(f"Loading dataset {args.dataset_name} ({args.dataset_split})...")
-    ds = load_dataset(args.dataset_name, "default")
-    split_ds = ds[args.dataset_split]
+    from datasets import load_dataset
+    split_ds = load_dataset(args.dataset_name, name=args.dataset_config, split=args.dataset_split)
     
     num_layers = wrapper.num_layers
     num_heads = wrapper.num_heads
@@ -115,9 +114,10 @@ def store_mean_activations(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_name", type=str, default="lmms-lab/POPE")
+    parser.add_argument("--dataset_config", default=None)
     parser.add_argument("--dataset_split", type=str, default="test")
     parser.add_argument("--max_samples", type=int, default=-1, help="Max samples to process. -1 for all.")
-    parser.add_argument("--model_id", type=str, default="Qwen/Qwen3Instruct")
+    parser.add_argument("--model_id", type=str, default="Qwen/Qwen3-VL-8B-Instruct")
     parser.add_argument("--output_path", type=str, required=True, help="Path to save the resulting .pt file")
     parser.add_argument("--device", type=str, default="cuda")
     

@@ -1,7 +1,11 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 import argparse
 import json
 import torch
-from pyfunctions.wrappers import Node
+from pyfunctions.nodes import Node
 from models.qwen3_thinking_wrapper import Qwen3ThinkingWrapper
 from tasks.hallucination_vlm import HallucinationDataset
 from methods.hallucination_circuit import score_nodes, compute_faithfulness
@@ -50,7 +54,9 @@ def run_circuit_discovery(args):
     ranked_nodes = sorted(scores.items(), key=lambda x: x[1]["combined"], reverse=True)
     
     # Threshold top percentile
-    num_to_keep = int(len(ranked_nodes) * (args.top_percentile / 100.0))
+    if not 0 <= args.top_percentile < 100:
+        raise ValueError("top_percentile must be in [0, 100)")
+    num_to_keep = max(1, int(len(ranked_nodes) * (1 - args.top_percentile / 100.0)))
     circuit_nodes = [n for n, s in ranked_nodes[:num_to_keep]]
     
     print(f"Selected {len(circuit_nodes)} nodes for the circuit.")
@@ -74,11 +80,7 @@ def run_circuit_discovery(args):
         })
         
     print("Computing faithfulness...")
-    # This requires running prop_LLaVA using all_heads_except_C as ablated_nodes
-    # Not fully implemented in compute_faithfulness due to huge node list mapping, 
-    # but the structure is returned.
-    # faithfulness = compute_faithfulness(dataset, circuit_nodes)
-    faithfulness = 0.0 # Placeholder for execution speed in testing
+    faithfulness = compute_faithfulness(dataset, circuit_nodes, yes_no=args.yes_no)
     
     result = {
         "ranked_heads_top_100": [{"layer": n.layer_idx, "head": n.attn_head_idx, "seq": n.sequence_idx, "score": s["combined"], "r_avg": s["r_avg"]} for n, s in ranked_nodes[:100]],
@@ -97,7 +99,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_path", type=str, required=True, help="Path to JSON file of hallucination examples")
     parser.add_argument("--correct_path", type=str, default=None, help="Path to JSON file of correct examples")
     parser.add_argument("--mean_activations_path", type=str, default=None, help="Path to precomputed mean activations .pt file")
-    parser.add_argument("--model_id", type=str, default="Qwen/Qwen3Thinking")
+    parser.add_argument("--model_id", type=str, default="Qwen/Qwen3-VL-8B-Thinking")
     parser.add_argument("--top_percentile", type=float, default=95.0, help="Percentile threshold")
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--output", type=str, default="hallucination_circuit_results.json", help="Output file for circuit results")

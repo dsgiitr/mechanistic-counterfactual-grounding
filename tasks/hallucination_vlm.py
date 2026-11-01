@@ -49,7 +49,7 @@ class HallucinationDataset:
             img = self._load_image(item["image"])
             # Run a forward pass to acquire visual/question/answer sequence boundaries 
             # and (if evaluating correct examples) memory-copy the reference activations
-            gen_token_id, logits, _ = self.wrapper.run_greedy(img, item["question"])
+            gen_token_id, logits, _ = self.wrapper.run_greedy(img, item["question"], answer_prefix=item.get("answer_prefix", ""), answer_prefix_token_ids=item.get("answer_prefix_token_ids"))
             
             # Populate token IDs if missing
             # Support both naming conventions:
@@ -117,15 +117,15 @@ class HallucinationDataset:
                 self.question_means[i].append(q_act)
 
         # Average them
-        self.avg_answer = torch.stack(self.answer_means).mean(dim=0).to(self.device).to(torch.float16)  # (layers, heads, d)
+        self.avg_answer = torch.stack(self.answer_means).mean(dim=0).to(self.device).to(self.wrapper.W_U.dtype)  # (layers, heads, d)
         
         self.avg_visual = {}
         for i, lst in self.visual_means.items():
-            self.avg_visual[i] = torch.stack(lst).mean(dim=0).to(self.device).to(torch.float16)
+            self.avg_visual[i] = torch.stack(lst).mean(dim=0).to(self.device).to(self.wrapper.W_U.dtype)
             
         self.avg_question = {}
         for i, lst in self.question_means.items():
-            self.avg_question[i] = torch.stack(lst).mean(dim=0).to(self.device).to(torch.float16)
+            self.avg_question[i] = torch.stack(lst).mean(dim=0).to(self.device).to(self.wrapper.W_U.dtype)
 
     def get_mean_correct(self, visual_positions, question_positions, answer_position):
         """
@@ -136,7 +136,7 @@ class HallucinationDataset:
         if len(self.correct_examples) == 0:
             seq_len = answer_position + 1
             z = torch.zeros((1, seq_len, self.wrapper.num_heads, self.wrapper.head_dim), 
-                            dtype=torch.float16, device=self.device)
+                            dtype=self.wrapper.W_U.dtype, device=self.device)
             return {l: z for l in range(self.wrapper.num_layers)}
             
         num_layers = self.wrapper.num_layers
@@ -145,7 +145,7 @@ class HallucinationDataset:
         # Reconstruct full sequence tensor from averaged components
         # Default to 0 for positions longer than what we have in the correct examples
         means = torch.zeros((num_layers, seq_len, self.wrapper.num_heads, self.wrapper.head_dim), 
-                            dtype=torch.float16, device=self.device)
+                            dtype=self.wrapper.W_U.dtype, device=self.device)
                             
         for i, pos_idx in enumerate(visual_positions):
             if i in self.avg_visual:
