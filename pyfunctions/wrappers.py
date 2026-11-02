@@ -88,10 +88,7 @@ class GPTAttentionWrapper():
         return self.num_attention_heads * self.attention_head_size
     
 
-class Node(NamedTuple):
-    layer_idx: int
-    sequence_idx: int
-    attn_head_idx: int
+from pyfunctions.nodes import Node
 
 # "ablation" isn't the right thing to call this, exactly; it's the set of nodes
 # you want to decompose into (rel, irrel) in the forward pass

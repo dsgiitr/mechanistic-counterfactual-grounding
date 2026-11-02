@@ -103,6 +103,7 @@ def plot_heatmap(matrix, xlabels, ylabels, title, color_label, out_path):
 
 
 def main():
+    print("Exploratory activation-coordinate diagnostics only: coordinates are not iid counterfactuals; heuristic widths have no confidence guarantee.")
     parser = argparse.ArgumentParser(
         description="Deep analysis and plots for small-sample VLM delta files."
     )

@@ -75,7 +75,7 @@ counterfactual:
   # Lambda: weight for the counterfactual risk term
   lambda_cf: 0.5
   # Epsilon: threshold for interpolation vs. original sample (Eq. 2 in paper)
-  # For epsilon -> 0: more interpolated; for epsilon -> 1: more independent
+  # Factual gate when u >= 1-epsilon; otherwise interpolate with a donor.
   epsilon: 0.1
   # Clipping constant M for importance weights (prevents high-variance updates)
   clip_M: 10.0
@@ -83,15 +83,15 @@ counterfactual:
   # Beta(alpha0, beta0) — paper uses (0.1, 0.1) which is bimodal (concentrate near 0 or 1)
   beta_alpha0: 0.1
   beta_beta0: 0.1
-  # Gradient ascent steps to optimize u (Eq. 3 in paper)
+  # Inner optimization steps for the existing CVL interpolation objective
   cf_grad_steps: 5
-  # Learning rate for u optimization (gradient ascent on u)
+  # Learning rate for inner u optimization
   cf_lr: 0.01
   # Alternate between ERM and CRM every N training steps
   alternate_every: 1
   # Whether to intervene on vision, language, or both
   intervene_vision: true
-  intervene_language: true
+  intervene_language: false
   # Probability of applying counterfactual training to a batch
   cf_prob: 0.5
   # Whether to detach counterfactual computation from main graph

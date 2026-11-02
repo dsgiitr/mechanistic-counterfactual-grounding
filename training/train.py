@@ -38,10 +38,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from transformers import LlavaProcessor
 
-from llava_cvl import LLaVACVL
-from vqa_dataset import VQADataset, AnswerVocabulary
-from collator import VQACollator, build_dataloader
-from trainer import CVLTrainer
+from training.llava_cvl import LLaVACVL
+from training.vqa_dataset import VQADataset, AnswerVocabulary
+from training.collator import VQACollator, build_dataloader
+from training.trainer import CVLTrainer
 from utils.logging_utils import setup_logging
 
 logger = logging.getLogger(__name__)

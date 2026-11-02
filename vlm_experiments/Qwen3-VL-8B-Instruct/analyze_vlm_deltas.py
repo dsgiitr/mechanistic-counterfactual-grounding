@@ -21,6 +21,7 @@ def calc_empirical_bernstein_width(m, delta, B, sample_variance):
     return term1 + term2
 
 def main():
+    print("Exploratory activation-coordinate diagnostics only: coordinates are not iid counterfactuals; heuristic widths have no confidence guarantee.")
     delta_dir = "../results/vlm_deltas"
     if not os.path.exists(delta_dir):
         print(f"Directory {delta_dir} not found. Run the extraction script first.")
@@ -69,7 +70,7 @@ def main():
             layer_bernstein[layer_name].append(b_width)
 
     # 5. Aggregate and print results
-    print("=== AVERAGED DELTA DISTRIBUTION BOUNDS (95% Confidence) ===")
+    print("=== EXPLORATORY ACTIVATION-COORDINATE HEURISTICS (NO CONFIDENCE GUARANTEE) ===")
     print(f"Sample size (m) is equal to the layer feature dimensionality (D).\n")
     
     for layer_name in sorted(layer_hoeffding.keys()):

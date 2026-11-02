@@ -33,10 +33,10 @@ from torch.utils.data import DataLoader, Subset
 from transformers import get_scheduler
 from tqdm.auto import tqdm
 
-from llava_cvl import LLaVACVL
-from erm_loss import ERMLoss
-from crm_loss import CRMLoss
-from evaluator import VQAEvaluator
+from training.llava_cvl import LLaVACVL
+from training.erm_loss import ERMLoss
+from training.crm_loss import CRMLoss
+from training.evaluator import VQAEvaluator
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +107,7 @@ class CVLTrainer:
         )
 
         # Mixed precision scaler (fp16 only; bf16 doesn't need it)
-        self.use_amp = self.mixed_precision == "fp16"
+        self.use_amp = self.mixed_precision == "fp16" and self.device.type == "cuda"
         self.scaler = torch.amp.GradScaler("cuda", enabled=self.use_amp)
 
         # Evaluator
@@ -216,7 +216,7 @@ class CVLTrainer:
         dtype = torch.bfloat16 if self.mixed_precision == "bf16" else torch.float16
         use_autocast = self.mixed_precision in ("fp16", "bf16")
 
-        with torch.autocast(device_type="cuda", dtype=dtype, enabled=use_autocast):
+        with torch.autocast(device_type=self.device.type, dtype=dtype, enabled=use_autocast):
             if use_crm:
                 # ── CRM step ──────────────────────────────────────────────
                 # Get random batch for counterfactual interpolation

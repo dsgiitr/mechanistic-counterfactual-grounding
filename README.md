@@ -4,6 +4,17 @@
 
 This repository contains the official implementation of the paper **"How Many Counterfactuals Does It Take? Probing VLM Hallucinations Through Circuits and Causal Effects"**. We study the sample complexity of counterfactual robustness for hallucinated outputs in Vision-Language Models (VLMs) by linking mechanistic interpretability (circuit discovery) to causal effect statistics.
 
+## Implementation status
+
+Native **LLaVA-1.5 and Qwen3-VL Instruct/Thinking** are supported. A trainable,
+bounded visual-latent generator supplies repeated counterfactuals directly to
+exact restoration-effect extraction and empirical Bernstein estimation.
+
+See [native models and latent generator commands](docs/latent_counterfactuals.md)
+and [implementation scope](docs/implementation_status.md). The generator's
+training objective is explicit; results come from actual model runs. Historical
+assets have not been recomputed as part of these implementation changes.
+
 ## Abstract
 
 Visual Language Models (VLMs) are known to produce hallucinated predictions that are not grounded in visual evidence, yet existing approaches lack a principled understanding of how robust such predictions are under counterfactual perturbations. In this work, we study the sample complexity of counterfactual robustness for hallucinated outputs in VLMs. We define a causal influence metric based on log-probability differences between factual, counterfactual, and activation-patched runs, and use it to characterize the stability of hallucinated predictions. By leveraging circuit discovery techniques (CD-T), we identify model components responsible for these predictions and track their activation differences across counterfactual samples. We then derive empirical bounds on the minimum number of counterfactual samples $m$ required to reliably detect instability in hallucinated outputs, using concentration inequalities and variance estimates of the causal influence distribution.
@@ -53,25 +64,23 @@ pip install -r requirements.txt
 
 ### Running the Pipeline
 
-The core framework evaluates sample complexity by testing hypothesis over counterfactual causal circuits. Navigate to the model folder of your choice (e.g., `LLaVA3.5-7B`) inside `vlm_experiments/` and run the pipeline:
+Follow the [pipeline commands](docs/pipeline_commands.md) from the repository
+root. After discovering a circuit, extract **actual activation-restoration
+effects** with `run_circuit_extraction.py`, then evaluate its JSONL output with
+`eval_hallucination_bernstein.py`. The latter requires `--effect_min` and
+`--effect_max`: a justified support interval fixed before sampling. It uses no
+model weights and never substitutes random effects for missing observations.
 
-1. **Extract Counterfactuals**:
-    ```bash
-    python run_vlm_extraction.py
-    ```
-2. **Discover Circuits**:
-    ```bash
-    python run_circuit_extraction.py
-    ```
-3. **Compute Sample Complexity bounds**:
-    Runs Algorithm 1 to derive minimum necessary counterfactual samples $\hat{m}_v$.
-    ```bash
-    python eval_hallucination_bernstein.py --circuit_path <path-to-circuit.json> --behavior_jsonl <path-to-logs.jsonl>
-    ```
+The extraction command accepts supplied images or latent counterfactuals from a
+trained generator checkpoint. Train it with `training/train_generator.py`; its
+supervised locality/diversity objective is documented explicitly. The older CVL
+utility remains a separate training approach.
+`run_vlm_extraction.py` remains an optional activation-difference diagnostic;
+its output is not an input to the restoration-effect estimator.
 
 ### Evaluation
 
-Standalone scripts are available in the `eval_metrics/` directory to reproduce performance benchmarks including POPE, COCO, and HallusionBench. See the scripts directly for input arguments.
+Answer-level scoring and concept-recall scripts are available in the `eval_metrics/` directory to reproduce performance benchmarks including POPE, COCO, and HallusionBench. See the scripts directly for input arguments.
 
 ## Citation
 

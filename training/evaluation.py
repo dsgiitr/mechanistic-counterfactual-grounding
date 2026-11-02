@@ -2,11 +2,14 @@ import argparse
 import torch
 from pathlib import Path
 import yaml
+import sys
 
-from llava_cvl import LLaVACVL
-from vqa_dataset import VQADataset, AnswerVocabulary
-from collator import VQACollator, build_dataloader
-from evaluator import VQAEvaluator
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from training.llava_cvl import LLaVACVL
+from training.vqa_dataset import VQADataset, AnswerVocabulary
+from training.collator import VQACollator, build_dataloader
+from training.evaluator import VQAEvaluator
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluate CVL-LLaVA on VQA")
