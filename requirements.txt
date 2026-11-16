@@ -1,32 +1,30 @@
-
-numpy
-pandas
-scipy
-tqdm
-seaborn
-matplotlib
-torch
-transformer_lens
-transformers
-scikit-learn
-nltk
-setuptools
-fancy-einsum
-torchtyping
-
-torch>=2.0.0
-torchvision>=0.15.0
-transformers>=4.57.0
+# Core pipeline (mcg/, experiments/)
+torch>=2.1
+transformers>=4.57.0        # Qwen3-VL support
 accelerate>=0.27.0
-bitsandbytes>=0.43.1
-peft>=0.8.0
+datasets>=2.16.0
 pillow>=10.0.0
 numpy>=1.24.0
 scipy>=1.11.0
-tqdm>=4.66.0
+matplotlib>=3.7
 pyyaml>=6.0
-datasets>=2.16.0
+tqdm>=4.66.0
+pytest>=7.0
+
+# CVL training utility (training/)
+torchvision>=0.15.0
+peft>=0.8.0
+bitsandbytes>=0.43.1
 evaluate>=0.4.0
 einops>=0.7.0
 sentencepiece>=0.1.99
 protobuf>=4.24.0
+
+# Reference CD-T code for non-VLM tasks (pyfunctions/, im_utils/)
+pandas
+seaborn
+scikit-learn
+nltk
+transformer_lens
+fancy-einsum
+torchtyping
