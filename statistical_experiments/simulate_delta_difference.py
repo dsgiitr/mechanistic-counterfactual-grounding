@@ -1,4 +1,4 @@
-from experiments.conc_ineq_performance_1b import estimate_true_params
+from statistical_experiments.conc_ineq_performance_1b import estimate_true_params
 import torch
 import matplotlib.pyplot as plt
 import numpy as np

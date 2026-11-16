@@ -1,4 +1,4 @@
-from experiments.simulate_delta_difference import B_delta
+from statistical_experiments.simulate_delta_difference import B_delta
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
@@ -68,7 +68,7 @@ for i, (name, dist_func) in enumerate(distributions.items()):
     ax.set_title(f"{name}\nTrue $\\sigma^2 \\approx {true_var:.3f}$") 
     ax.set_xlabel("Sample Size $m$ (log scale)")
     if i == 0:
-        ax.set_ylabel(f"CI Width ($\epsilon$) at {1-delta:.0%} Confidence")
+        ax.set_ylabel(rf"CI Width ($\epsilon$) at {1-delta:.0%} Confidence")
     ax.grid(True, alpha=0.3)
     ax.legend()
 

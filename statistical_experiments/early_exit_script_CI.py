@@ -1,4 +1,4 @@
-from experiments.simulate_delta_difference import get_grounded_delta, get_hallucinated_delta, get_uniform_delta
+from statistical_experiments.simulate_delta_difference import get_grounded_delta, get_hallucinated_delta, get_uniform_delta
 import torch
 import numpy as np
 
