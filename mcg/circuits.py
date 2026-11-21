@@ -1,6 +1,6 @@
 """Circuit search on CD-T scores.
 
-`iterative_search` is the per-example procedure of Appendix C:
+`iterative_search` is the per-example procedure of Appendix D:
   (1) keep heads with beta_logit > 0, take the top K_0 by S_logit as T_0 and C = T_0;
   (2) score j not in C by S_agg(j) = sum_{t in T_i} S_head(j,t); discard j if
       beta_agg(j) = sum_{t in T_i} beta_head(j,t) <= 0;
@@ -8,7 +8,7 @@
   (4) stop when no valid upstream head remains or all targets are in layer 0.
 The schedule {K_i} (default K_0 = K_i = 4) counts heads, not counterfactuals.
 
-The other selectors are the strategies compared in Appendix D (Figure 3):
+The other selectors are the strategies compared in Appendix E (Figure 7):
 global, layer-normalised, iterative-decay and a size-matched random control.
 They operate on dataset-level scores from `aggregate_scores`.
 """

@@ -5,7 +5,7 @@ Datasets (Section 4.1)
   hallusionbench  HallusionBench (lmms-lab/HallusionBench, splits "image" + "non_image")
   coco            COCO val2014 captioning, objects extracted CHAIR-style
 
-Answer y (what log p_theta(y) scores, Eq. 2)
+Answer y (what log p_theta(y) scores, Eq. 3)
   binary  : the token(s) of the model's yes/no word, after any reasoning trace
   caption : the first mention of a hallucinated object (hallucinated example) or of
             an annotated object (grounded example), teacher-forced after the caption
@@ -250,3 +250,12 @@ def sample_is_correct(vlm, bench, item, sample_ids):
         return parse_binary(text) == item["gt"]
     gold = set(item["gt"])
     return all(category in gold for category, _, _ in bench.objects.mentions(text))
+
+
+def load_donor_pool(cfg):
+    """Donor pool of the counterfactual generator (POPE images + COCO annotations)."""
+    from mcg.counterfactuals import DonorPool
+    data = cfg["data"]
+    pope = POPE(data["pope"]["dataset"], data["pope"]["config"], data["pope"]["split"])
+    return DonorPool.from_pope(pope, data["coco"]["instances"], CocoObjects(data["coco"].get("chair_synonyms")),
+                               cfg["counterfactuals"]["donor_exclude_top"])

@@ -5,7 +5,7 @@ import torch
 
 from mcg.cdt import answer_direction, capture_context, sweep
 from mcg.circuits import iterative_search
-from mcg.counterfactuals import LatentCounterfactuals
+from mcg.counterfactuals import DonorMixingCounterfactuals, load_beta
 from mcg.models import HookSet
 from mcg.patching import patch_heads
 from mcg.restoration import Restorer
@@ -50,7 +50,7 @@ class ExampleState:
 
 
 def discover_circuit(vlm, state, means, cfg, progress=None):
-    """Per-example CD-T circuit S* (Appendix C)."""
+    """Per-example CD-T circuit S* (Appendix D)."""
     c = cfg["cdt"]
     direction = answer_direction(vlm, state.target[0], state.contrast)
     scores = sweep(vlm, state.ctx, means, state.answer_pos, direction, c["batch_size"], progress,
@@ -81,19 +81,26 @@ def node_activations(vlm, inputs, nodes):
     return out
 
 
-def run_counterfactuals(vlm, bench, state, circuit, cfg, K, seed, example_id, effects=True,
-                        effects_on="retained"):
-    """Generate K latent counterfactuals, apply the retention rule, and measure.
+def make_generator(vlm, pool, state, record, cfg, seed, example_id):
+    """CVL donor-mixing generator for one example (Eq. 1)."""
+    c = cfg["counterfactuals"]
+    return DonorMixingCounterfactuals(
+        vlm, pool, load_beta(cfg), c["gate"], seed, example_id, state.item["image"], state.prompt,
+        queried=pool.queried_object(state.item, record), factual_key=state.item.get("image_key"))
 
-    Returns per-counterfactual records and the mean circuit activation over the
-    retained counterfactuals (used by the oracle-assisted patch).
+
+def run_counterfactuals(vlm, bench, state, circuit, cfg, K, seed, example_id, generator, effects=True,
+                        effects_on="retained"):
+    """Generate K counterfactuals, apply the retention rule, and measure.
+
+    Returns per-counterfactual records (u, donor, retention votes, restoration
+    effects) and the mean circuit activation over the retained counterfactuals
+    (used by the oracle-assisted patch).
     """
     cf_cfg = cfg["counterfactuals"]
     decodings = int(cf_cfg["decodings"][K] if K in cf_cfg["decodings"] else cf_cfg["decodings"][str(K)])
     threshold = decodings - int(cf_cfg["retention_margin"])
     nodes = [(n["layer"], n["head"]) for n in circuit]
-    generator = LatentCounterfactuals(vlm, cf_cfg["alpha"], seed, example_id)
-    generator.observe(state.score_inputs)
     restorer = Restorer(vlm, circuit, state.ctx["acts"]) if effects else None
     sums, retained = {}, 0
     records = []
@@ -104,7 +111,9 @@ def run_counterfactuals(vlm, bench, state, circuit, cfg, K, seed, example_id, ef
                                    n=decodings, seed=derive_seed(seed, example_id, k, "decode"))
             n_correct = sum(sample_is_correct(vlm, bench, state.item, s) for s in samples)
             keep = n_correct >= threshold
-            record = {"k": k, "n_correct": int(n_correct), "retained": bool(keep)}
+            draw = generator.sample(k)
+            record = {"k": k, "u": draw["u"], "donor": draw["donor"], "factual_gate": draw["factual_gate"],
+                      "n_correct": int(n_correct), "retained": bool(keep)}
             acts = None
             if effects and (keep or effects_on == "all"):
                 baseline, deltas, acts = restorer.run(state.score_inputs, state.target,

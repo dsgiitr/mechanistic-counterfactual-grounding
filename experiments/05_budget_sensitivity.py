@@ -1,4 +1,4 @@
-"""Step 5: circuit-size sensitivity of four node-selection strategies (Appendix D, Figure 3).
+"""Step 5: circuit-construction budget of four node-selection strategies (Appendix E, Figure 7).
 
 Dataset-level CD-T scores are aggregated over the hallucinated examples
 (combined = mean S x |mean beta| / mean |beta|). For each circuit size n and

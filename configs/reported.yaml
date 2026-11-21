@@ -1,0 +1,24 @@
+# Quantities reported in the paper, used as inputs when the budget tables
+# (Tables 2, 3, 5, 6; Figures 4-6) are recomputed with
+#   python experiments/08_analyze.py --source reported
+# Group-mean variances V and retained counts are the paper's Tables 2 and 1;
+# timings are the paper's Table 4 (seconds). Fresh runs replace all of these
+# with `--source runs` (default).
+
+group_means_V:
+  llava-1.5-7b:         {grounded: 0.018, hallucinated: 0.083}
+  qwen3-vl-8b-thinking: {grounded: 0.021, hallucinated: 0.044}
+  smolvlm-500m:         {grounded: 0.023, hallucinated: 0.062}
+  smolvlm-256m:         {grounded: 0.027, hallucinated: 0.073}
+
+retained_out_of_K:      # Table 1
+  llava-1.5-7b:         {50: 13, 100: 24, 150: 57}
+  qwen3-vl-8b-thinking: {50: 17, 100: 31, 150: 42}
+  smolvlm-500m:         {50: 16}
+  smolvlm-256m:         {50: 9}
+
+timing_seconds:         # Table 4 medians; trace_seconds: mean reasoning-trace time (Appendix C)
+  llava-1.5-7b:         {tf_b1: 0.056, tf_b16_per_pass: 0.044, decode10: 0.650}
+  qwen3-vl-8b-thinking: {tf_b1: 0.105, tf_b16_per_pass: 0.043, decode10: 0.540, trace_seconds: 3.6}
+  smolvlm-500m:         {tf_b1: 0.048, tf_b16_per_pass: 0.037, decode10: 0.403}
+  smolvlm-256m:         {tf_b1: 0.048, tf_b16_per_pass: 0.034, decode10: 0.367}

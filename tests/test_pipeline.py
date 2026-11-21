@@ -19,7 +19,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from mcg.bounds import bernstein_budget, bound_constants, eb_radius, example_statistics  # noqa: E402
 from mcg.cdt import capture_context, propagate, sweep  # noqa: E402
 from mcg.circuits import iterative_search, layer_normalized_topk, global_topk, iterative_decay  # noqa: E402
-from mcg.counterfactuals import LatentCounterfactuals  # noqa: E402
+from collections import Counter  # noqa: E402
+from mcg.counterfactuals import DonorMixingCounterfactuals, DonorPool, mixing, projector_outputs  # noqa: E402
 from mcg.models import VLM, HookSet, append_tokens  # noqa: E402
 from mcg.patching import mean_ablation, patch_heads  # noqa: E402
 from mcg.restoration import Restorer  # noqa: E402
@@ -123,9 +124,8 @@ def test_restoration_equals_explicit_patch_and_is_batch_invariant(family):
     restorer = Restorer(vlm, nodes, ctx["acts"])
     base, deltas, _ = restorer.run(inputs, target)
     assert max(abs(v) for v in deltas.values()) < 1e-5  # restoring on the factual input changes nothing
-    cf = LatentCounterfactuals(vlm, alpha=0.5, seed=0, example_key="x")
-    cf.observe(inputs)
-    with cf.draw(2):
+    donor = projector_outputs(vlm, donor_of(inputs))
+    with mixing(vlm, donor, 0.4):
         b1, d1, acts = restorer.run(inputs, target, batch_size=8)
         b2, d2, _ = restorer.run(inputs, target, batch_size=1)
         D = vlm.head_dim
@@ -145,27 +145,45 @@ def test_restoration_equals_explicit_patch_and_is_batch_invariant(family):
     assert set(acts) == {(0, 1), (2, 3), (1, 0)}
 
 
+def donor_of(inputs, shift=1.0):
+    """Same token layout, different image."""
+    return dict(inputs, pixel_values=inputs["pixel_values"] + shift)
+
+
 @pytest.mark.parametrize("family", list(FAMILIES))
-def test_counterfactuals_are_deterministic_and_tile_under_batching(family):
+def test_donor_mixing_interpolates_projected_tokens_and_tiles(family):
     vlm, inputs = build(family)
-    cf = LatentCounterfactuals(vlm, alpha=0.3, seed=7, example_key="e")
-    cf.observe(inputs)
-    with cf.draw(0):
-        a = vlm.forward_logits(inputs)[0, -1]
-        batched = vlm.forward_logits(vlm.expand(inputs, 3))[:, -1]
-    cf.clear()
-    with cf.draw(0):
-        again = vlm.forward_logits(inputs)[0, -1]
-    with cf.draw(1):
-        other = vlm.forward_logits(inputs)[0, -1]
     factual = vlm.forward_logits(inputs)[0, -1]
-    torch.testing.assert_close(a, again)
-    torch.testing.assert_close(batched, a.expand_as(batched), atol=1e-5, rtol=1e-5)
-    assert (a - other).abs().max() > 1e-6 and (a - factual).abs().max() > 1e-6
-    zero = LatentCounterfactuals(vlm, alpha=0.0, seed=7, example_key="e")
-    zero.observe(inputs)
-    with zero.draw(0):
+    donor_inputs = donor_of(inputs)
+    donor = projector_outputs(vlm, donor_inputs)
+    with mixing(vlm, donor, 1.0):
         torch.testing.assert_close(vlm.forward_logits(inputs)[0, -1], factual)
+    with mixing(vlm, donor, 0.0):  # all visual tokens (and DeepStack features) come from the donor
+        torch.testing.assert_close(vlm.forward_logits(inputs)[0, -1], vlm.forward_logits(donor_inputs)[0, -1],
+                                   atol=1e-5, rtol=1e-5)
+    with mixing(vlm, donor, 0.5):
+        mixed = vlm.forward_logits(inputs)[0, -1]
+        batched = vlm.forward_logits(vlm.expand(inputs, 3))[:, -1]
+    assert (mixed - factual).abs().max() > 1e-6
+    torch.testing.assert_close(batched, mixed.expand_as(batched), atol=1e-5, rtol=1e-5)
+
+
+def test_donor_pool_rule_and_deterministic_u_draws():
+    from mcg.tasks import CocoObjects
+    cooc = {"dog": Counter({"person": 9, "frisbee": 5, "car": 1})}
+    pool = DonorPool([(k, None) for k in ("a", "b", "c", "d")],
+                     {"a": {"dog"}, "b": {"person"}, "c": {"car"}, "d": {"cat"}}, cooc, CocoObjects(), exclude_top=2)
+    assert pool.excluded("dog") == {"dog", "person", "frisbee"}
+    assert [pool.images[i][0] for i in pool.candidates("dog", factual_key="d")] == ["c"]
+    assert pool.queried_object({"question": "Is there a dog in the image?"}) == "dog"
+    vlm = SimpleNamespace()
+    gen = DonorMixingCounterfactuals(vlm, pool, (0.1, 0.1), 0.1, seed=3, example_key="e", image=None,
+                                     question="", queried="dog", factual_key="d")
+    draws = [gen.sample(k) for k in range(200)]
+    assert draws[:5] == [gen.sample(k) for k in range(5)]
+    assert all(d["donor"] == "c" for d in draws)
+    assert all(d["factual_gate"] == (d["u"] >= 0.9) for d in draws)
+    assert 0 < sum(d["factual_gate"] for d in draws) < 200   # Beta(0.1, 0.1) is bimodal
 
 
 def test_patch_heads_only_touches_prefill_and_mean_ablation_identities():

@@ -1,4 +1,4 @@
-"""Restoration effects (Section 3.3, Eq. 2).
+"""Restoration effects (Section 3.3, Eq. 3).
 
     Delta_v^(k) = log p(y | Restore(v, x_cf^(k))) - log p(y | x_cf^(k))
 

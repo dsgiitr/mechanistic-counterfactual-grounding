@@ -13,7 +13,8 @@ from mcg.utils import load_config  # noqa: E402
 def parser(description, model=True, dataset=True):
     p = argparse.ArgumentParser(description=description)
     if model:
-        p.add_argument("--model", required=True, help="registry key, e.g. llava-1.5-7b (see mcg/models.py)")
+        kwargs = {"default": model} if isinstance(model, str) else {"required": True}
+        p.add_argument("--model", help="registry key, e.g. llava-1.5-7b (see mcg/models.py)", **kwargs)
     if dataset:
         p.add_argument("--dataset", required=True, choices=["pope", "coco", "hallusionbench"])
     p.add_argument("--config", default=str(ROOT / "configs" / "paper.yaml"))
@@ -43,8 +44,8 @@ def run_dir(args, model=None, dataset=None):
     return path
 
 
-def load_model(args):
+def load_model(args, dtype=None):
     import torch
     from mcg.models import VLM
     torch.set_grad_enabled(False)
-    return VLM(args.model, device=args.device)
+    return VLM(args.model, device=args.device, dtype=dtype)
