@@ -74,3 +74,38 @@ def summarize(values):
     lo, hi = bootstrap_ci(x)
     return {"n": int(len(x)), "mean": float(x.mean()), "median": float(np.median(x)),
             "std": float(x.std(ddof=1)) if len(x) > 1 else 0.0, "ci95": [lo, hi]}
+
+
+def cluster_bootstrap_auroc(positive, pos_clusters, negative, neg_clusters, n_boot=2000, level=0.95, seed=0):
+    """AUROC with a percentile CI from resampling clusters (images) with replacement."""
+    pos, neg = np.asarray(positive, float), np.asarray(negative, float)
+    pc, nc = np.asarray(pos_clusters), np.asarray(neg_clusters)
+    clusters = np.unique(np.concatenate([pc, nc]))
+    rng = np.random.default_rng(seed)
+    values = []
+    for _ in range(n_boot):
+        pick = rng.choice(clusters, size=len(clusters), replace=True)
+        counts = {c: n for c, n in zip(*np.unique(pick, return_counts=True))}
+        wp = np.array([counts.get(c, 0) for c in pc])
+        wn = np.array([counts.get(c, 0) for c in nc])
+        if wp.sum() == 0 or wn.sum() == 0:
+            continue
+        greater = (pos[:, None] > neg[None, :]) + 0.5 * (pos[:, None] == neg[None, :])
+        values.append(float((wp[:, None] * wn[None, :] * greater).sum() / (wp.sum() * wn.sum())))
+    alpha = (1 - level) / 2
+    return {"auroc": auroc(pos, neg), "ci95": [float(np.quantile(values, alpha)), float(np.quantile(values, 1 - alpha))]}
+
+
+def cluster_bootstrap_mean(values, clusters, n_boot=2000, level=0.95, seed=0):
+    """Mean with a percentile CI from resampling clusters with replacement."""
+    x, c = np.asarray(values, float), np.asarray(clusters)
+    keys = np.unique(c)
+    rng = np.random.default_rng(seed)
+    means = []
+    for _ in range(n_boot):
+        pick = rng.choice(keys, size=len(keys), replace=True)
+        counts = {k: n for k, n in zip(*np.unique(pick, return_counts=True))}
+        w = np.array([counts.get(k, 0) for k in c])
+        means.append(float((w * x).sum() / w.sum()))
+    alpha = (1 - level) / 2
+    return float(x.mean()), [float(np.quantile(means, alpha)), float(np.quantile(means, 1 - alpha))]

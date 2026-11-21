@@ -1,11 +1,10 @@
-# Experimental settings of the paper (Appendix E, Table 6).
+# Experimental settings of the paper.
 # Every experiment script reads this file; command-line flags override single values.
 
 seed: 0
 
 models:                         # keys of mcg.models.MODEL_REGISTRY
   stability: [llava-1.5-7b, qwen3-vl-8b-thinking, smolvlm-500m, smolvlm-256m]
-  patching:  [llava-1.5-7b, qwen3-vl-8b-thinking, qwen3-vl-8b-instruct, smolvlm-500m, smolvlm-256m]
 
 datasets: [pope, coco, hallusionbench]
 
@@ -34,14 +33,18 @@ examples:                       # Section 4.1
   num_grounded: 50              # uniform random draw from correctly answered items
   distinct_images: true
 
-counterfactuals:                # Section 3.1 / 4.1
-  alpha: 0.1                    # intervention strength
+counterfactuals:                # Section 3.1, Eq. 1: CVL donor mixing of projected visual tokens
+  gate: 0.1                     # eps_g: u >= 1 - gate keeps the factual tokens
+  beta_alpha: 0.1               # u ~ Beta(beta_alpha, beta_beta) unless a trained CVL checkpoint is given;
+  beta_beta: 0.1                #   (0.1, 0.1) is the CVL prior before training
+  beta_checkpoint: null         # training/ checkpoint.pt: its exogenous_alpha_v / exogenous_beta_v are used
+  donor_exclude_top: 5          # donors contain neither the queried object nor its 5 most co-occurring categories
   K: {llava-1.5-7b: [50, 100, 150], qwen3-vl-8b-thinking: [50, 100, 150],
       qwen3-vl-8b-instruct: [50], smolvlm-500m: [50], smolvlm-256m: [50]}
   decodings: {50: 10, 100: 10, 150: 15}   # sampled decodings per counterfactual
   temperature: 0.7
   retention_margin: 1           # retain if correct in >= decodings - margin (9/10, 14/15)
-  effects_on: retained          # "retained" (paper) or "all" (also enables label-free analysis)
+  effects_on: retained          # "retained" (paper) or "all" (label-free variant, Section 6 step 2)
 
 background:
   dataset: pope
@@ -62,7 +65,7 @@ bounds:                         # Section 4.1
 restoration:
   batch_size: 16
 
-budget_sensitivity:             # Appendix D (Figure 3)
+budget_sensitivity:             # Appendix E (Figure 7)
   model: llava-1.5-7b
   dataset: pope
   num_examples: 50

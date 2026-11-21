@@ -1,32 +1,35 @@
-# Mechanistic Signals of Unintended Misinformation: Counterfactual Circuit Stability in Vision-Language Models
+# What Does It Cost to Audit a Hallucination? Counterfactual Circuit Stability as an Offline Signal for VLM Review
 
 [![arXiv](https://img.shields.io/badge/arXiv-2606.08777-b31b1b.svg)](https://arxiv.org/abs/2606.08777)
 
-Official implementation. For every prediction of a vision-language model (VLM) we
+Official implementation. For an answer $y$ of a vision-language model (VLM) to a question about an image $I$, the audit
 
-1. discover a sparse circuit of decoder attention heads with contextual decomposition for transformers (CD-T),
-2. perturb the visual representation with repeated latent counterfactuals
-   $x_{\mathrm{cf}}^{(k)} = G_\phi(E_v(I) + \alpha z_k)$, $z_k \sim \mathcal N(0, I)$,
-3. measure, for every circuit node $v$, the restoration effect
-   $\Delta_v^{(k)} = \log p_\theta(y \mid \mathrm{Restore}(v, x_{\mathrm{cf}}^{(k)})) - \log p_\theta(y \mid x_{\mathrm{cf}}^{(k)})$,
-4. turn the spread of these effects into a projected counterfactual budget through Bernstein's inequality,
-   $\hat K_v = \lceil (2\hat\sigma_v^2 + \tfrac23 B_v\epsilon)\,\epsilon^{-2}\log(2/\delta) \rceil$, $\bar K = |S^\star|^{-1}\sum_v \hat K_v$,
-5. test causal involvement with an oracle-assisted patch of the circuit.
+1. discovers a sparse decoder circuit $S^\star$ of attention heads with contextual decomposition for transformers (CD-T);
+2. generates counterfactuals by counterfactual vision-and-language (CVL) donor mixing of the projected visual tokens,
+   $\tilde h = u\,h(I) + (1-u)\,h(I')$ if $u < 1-\epsilon_g$ (else $h(I)$), with $u \sim \mathrm{Beta}$ and a donor image $I'$;
+3. keeps a counterfactual if at least 9 of 10 sampled decodings are correct (14 of 15 for $K=150$);
+4. measures the restoration effect of each node $v \in S^\star$,
+   $\Delta_v^{(k)} = \log p_\theta(y \mid \mathrm{Patch}(v, x_{\mathrm{cf}}^{(k)}; A_v^f)) - \log p_\theta(y \mid x_{\mathrm{cf}}^{(k)})$;
+5. summarises an example by its mean node variance $V$ and converts it into a plug-in Bernstein budget
+   $\hat K_v = \lceil (2\hat\sigma_v^2 + \tfrac23 B\epsilon)\,\epsilon^{-2}\log(2/\delta) \rceil$, $\bar K = |S^\star|^{-1}\sum_v \hat K_v$;
+6. reports what the audit costs (model calls, GPU-seconds), where ground-truth labels enter, and an oracle upper bound
+   on what restoring the circuit recovers.
 
-Hallucinated and grounded predictions are compared on POPE, COCO and HallusionBench for LLaVA-1.5-7B, Qwen3-VL-8B (Thinking and Instruct) and SmolVLM-500M/256M.
+Steps 3 and 6 use ground-truth labels (retention and the oracle patch); the label-free variants of Section 6 are
+available as options.
 
 ## Supported models
 
-| Key (`--model`) | Checkpoint | Studies |
-|---|---|---|
-| `llava-1.5-7b` | `llava-hf/llava-1.5-7b-hf` | stability, patching, circuit-size sensitivity |
-| `qwen3-vl-8b-thinking` | `Qwen/Qwen3-VL-8B-Thinking` | stability, patching |
-| `qwen3-vl-8b-instruct` | `Qwen/Qwen3-VL-8B-Instruct` | patching |
-| `smolvlm-500m` | `HuggingFaceTB/SmolVLM-500M-Instruct` | stability, patching |
-| `smolvlm-256m` | `HuggingFaceTB/SmolVLM-256M-Instruct` | stability, patching |
+| Key (`--model`) | Checkpoint |
+|---|---|
+| `llava-1.5-7b` | `llava-hf/llava-1.5-7b-hf` |
+| `qwen3-vl-8b-thinking` | `Qwen/Qwen3-VL-8B-Thinking` |
+| `smolvlm-500m` | `HuggingFaceTB/SmolVLM-500M-Instruct` |
+| `smolvlm-256m` | `HuggingFaceTB/SmolVLM-256M-Instruct` |
+| `qwen3-vl-8b-instruct` | `Qwen/Qwen3-VL-8B-Instruct` |
 
-All models run natively through Hugging Face Transformers (LLaVA, Qwen3-VL with mRoPE and DeepStack,
-Idefics3/SmolVLM). Another checkpoint of one of these families can be used by passing its Hub ID as `--model`.
+All models run natively through Hugging Face Transformers. Donor mixing is applied to each model's projector output:
+LLaVA's multimodal projector, SmolVLM's connector, and Qwen3-VL's patch merger together with its DeepStack mergers.
 
 ## Installation
 
@@ -39,76 +42,76 @@ bash scripts/download_data.sh          # COCO val2014, instance annotations, CHA
 
 POPE (`lmms-lab/POPE`) and HallusionBench (`lmms-lab/HallusionBench`) are downloaded from the Hugging Face Hub on first use.
 
+## Counterfactual generator
+
+$u$ is drawn i.i.d. from a Beta distribution. Pass a trained CVL checkpoint (`training/`, LLaVA-1.5 configuration:
+LoRA rank 16, VQA-CP, prior Beta(0.1, 0.1), five inner Adam steps, weight 0.5) to use its learned posterior:
+
+```bash
+python training/train.py --config training/configs/cvl_llava_vqa.yaml        # trains CVL for LLaVA-1.5
+BETA_CHECKPOINT=path/to/checkpoint.pt bash scripts/reproduce_paper.sh
+```
+
+Without a checkpoint, $u$ follows `counterfactuals.beta_alpha/beta_beta` in [`configs/paper.yaml`](configs/paper.yaml)
+(default: the prior Beta(0.1, 0.1)). Donors are POPE images whose COCO annotations contain neither the queried object
+nor its five most frequently co-occurring categories; each donor is resized to the factual image so both yield the
+same visual tokens.
+
 ## Reproducing the paper
 
 ```bash
 bash scripts/reproduce_paper.sh
 ```
 
-runs every step for every model and writes all tables and figures to `results/paper/`.
-Use `MODELS="llava-1.5-7b"` to restrict models, `STEPS="3 6"` to rerun steps, `DEVICE=cuda:1` to pick a GPU and
-`SHARDS=4` to split the benchmark-patching step over four GPUs. Every step resumes where it stopped.
+runs every step for the four studied models and writes all tables and figures to `results/paper/`. `MODELS=...`
+restricts models, `STEPS="3 8"` reruns steps, `DEVICE=cuda:1` selects a GPU; every step resumes where it stopped.
 
-The steps can also be run individually:
-
-```bash
-# 1. base predictions on the benchmark; select 50 hallucinated + 50 grounded examples
-python experiments/01_select_examples.py   --model llava-1.5-7b --dataset pope
-# 2. background mean activation of every head (CD-T / ablation reference)
-python experiments/02_background_means.py  --model llava-1.5-7b
-# 3. circuits, K latent counterfactuals, retention, restoration effects, oracle patch
-python experiments/03_stability.py         --model llava-1.5-7b --dataset pope --K 50
-# 4. benchmark scores before / after patching every item
-python experiments/04_benchmark_patching.py --model llava-1.5-7b --dataset pope
-# 5. circuit-size sensitivity of node-selection strategies (LLaVA, POPE)
-python experiments/05_budget_sensitivity.py
-# 6. all tables, figures and statistics
-python experiments/06_analyze.py
-```
-
-| Paper | Produced by | Output in `results/paper/` |
+| Step | Script | Produces |
 |---|---|---|
-| Table 1 — generated / retained counterfactuals | steps 3, 6 | `table1_retention.md` |
-| Figure 2 — $V_i$ and $\bar K$, grounded vs hallucinated | steps 3, 6 | `figure2_stability_<dataset>.pdf` |
-| Section 4.2 — variance and budget ratios, $\bar K$ vs. $8 + 216\,V_i$ check | steps 3, 6 | `stability_summary.md` |
-| Table 2 — corrections by oracle-assisted patching (Wilson 95% CI) | steps 3, 6 | `table2_correction.md` |
-| Table 3 — POPE / COCO $R_{\mathrm{ctx}}$ / HallusionBench, base vs. patch | steps 1, 4, 6 | `table3_benchmark.md` |
-| Figure 3 — circuit-size sensitivity | steps 5, 6 | `figure3_budget_sensitivity.pdf` |
-| Section 3.4, Appendix B — bound constants (floor 7.98, slope 216, empirical-Bernstein $K\approx 29$) | step 6 | `bound_constants.md` |
-| Section 6 — per-example distributions, bootstrap CIs, Mann–Whitney test, AUROC, confidence-matched comparison, label-free comparison, corrected vs. broken counts | steps 3, 4, 6 | `stability_summary.{md,json}`, `figure_stability_distributions_<dataset>.pdf`, `table3_benchmark.md` |
+| 1 | `experiments/01_select_examples.py --model M --dataset D` | base predictions; 50 hallucinated + 50 grounded examples |
+| 2 | `experiments/02_background_means.py --model M` | head background means (CD-T reference) |
+| 3 | `experiments/03_stability.py --model M --dataset D --K K` | circuits, counterfactuals, retention, $\Delta_v^{(k)}$, oracle patch |
+| 4 | `experiments/04_confidence_control.py` | confidence-matched output-level control on LLaVA / POPE |
+| 5 | `experiments/05_budget_sensitivity.py` | circuit-construction strategies |
+| 6 | `experiments/06_timing.py` | timing of the audit primitives |
+| 7 | `experiments/07_coverage_simulation.py` | coverage simulations of the budgets (no model) |
+| 8 | `experiments/08_analyze.py` | all tables and figures |
 
-Per-example records (circuits, every counterfactual's retention votes and restoration effects, oracle-patch
-outcomes) are kept in `results/<model>/<dataset>/`, so every statistic can be recomputed without rerunning models.
-The label-free comparison requires `--set counterfactuals.effects_on=all` in step 3, which records restoration
-effects for every counterfactual, not only the retained ones.
+| Paper | Output in `results/` |
+|---|---|
+| Figure 1 — donor mixing vs. confidence-matched controls | `llava-1.5-7b/pope/figure1_confidence_control.pdf`, `confidence_control.json` |
+| Table 1 — retained counterfactuals | `paper/table1_retention.md` |
+| Table 2 — group-mean $V$ and plug-in $\bar K$ | `paper/table2_variance.md` |
+| Table 3 — budget ratio over $(\epsilon, B)$ | `paper/table3_budget_sensitivity.md` |
+| Table 4 — timings | `timing.json` |
+| Table 5 — budgets under plug-in, empirical-Bernstein and Hoeffding rules | `paper/table5_rules.md` |
+| Table 6 — cost of auditing one answer | `paper/table6_audit_cost.md` |
+| Table 7 — oracle restoration (Wilson 95% CI) | `paper/table7_oracle_restoration.md` |
+| Figures 4–6 — Hoeffding vs. Bernstein, budget rules, ratios | `paper/figure4_*`, `figure5_*`, `figure6_*` |
+| Figure 7 — circuit-construction budget | `paper/figure7_circuit_construction.pdf` |
+| Appendix B — coverage simulations | `paper/coverage_simulation.md` |
+| Section 6, step 1 — per-example $V_i$, AUROC, Mann–Whitney test, confidence-matched comparison | `paper/stability_summary.md` |
+
+Tables 2, 3, 5, 6 and Figures 4–6 are functions of the group means, retention rates and timings.
+`08_analyze.py --source reported` recomputes them from the values reported in the paper
+([`configs/reported.yaml`](configs/reported.yaml)); the default uses fresh runs.
+
+**Label-free variants (Section 6).** `--set counterfactuals.effects_on=all` in step 3 records restoration effects for
+every counterfactual, so step 8 also reports $V$ on unfiltered counterfactuals (step 2 of Section 6).
 
 ## Configuration
 
-All settings are in [`configs/paper.yaml`](configs/paper.yaml); any entry can be overridden from the command line,
-e.g. `--set counterfactuals.alpha=0.2 bounds.epsilon=0.1`.
+All settings are in [`configs/paper.yaml`](configs/paper.yaml); any entry can be overridden with `--set key=value`.
 
 | Setting | Value |
 |---|---|
-| Counterfactuals $K$ | 50 / 100 / 150 (LLaVA, Qwen3-VL-Thinking); 50 (others) |
-| Intervention strength $\alpha$; generator $G_\phi$ | 0.1; the model's frozen multimodal projector |
-| Sampled decodings per counterfactual; temperature | 10 ($K\le 100$), 15 ($K=150$); 0.7 |
-| Retention | correct in $\ge 9/10$ (or $14/15$) decodings, same rule for both groups |
-| Bounds $\epsilon$, $\delta$, $B_v$ | 0.185, 0.05, 0.6 (common to all nodes) |
-| CD-T schedule | $K_0 = K_i = 4$ heads per iteration |
-| Examples | 50 hallucinated (first in benchmark order) + 50 grounded (random), distinct images |
+| Generator | CVL donor mixing, gate $\epsilon_g = 0.1$, $u \sim$ Beta (trained posterior or configured) |
+| Counterfactuals $K$ | 50 / 100 / 150 (LLaVA, Qwen3-VL-Thinking); 50 (SmolVLM) |
+| Retention | $\ge 9/10$ ($14/15$ for $K=150$) sampled decodings correct, temperature 0.7 |
+| Bounds $\epsilon$, $\delta$, $B$ | 0.185, 0.05, 0.6 |
+| CD-T schedule | $m_0 = m_i = 4$ heads per iteration |
 
-[docs/method.md](docs/method.md) specifies each computation: how $h(I)$ and $G_\phi$ are defined per architecture,
-how the answer $y$ is chosen for yes/no questions and captions, how the reasoning trace of the Thinking model is
-held fixed, the CD-T scoring and search rules, background means, patching and the circuit-size metrics.
-
-## Compute
-
-Per example, circuit discovery costs one CD-T propagation per decoder layer and batch of source heads; each of the
-$K$ counterfactuals costs one sampled-decoding call (`decodings` sequences) and, if retained, $|S^\star| + 1$
-teacher-forced forward passes (batched over nodes, `restoration.batch_size`). The benchmark-patching step repeats
-circuit discovery and counterfactual sampling for every benchmark item and is the most expensive step; shard it
-with `SHARDS`. The default batch sizes target an 80 GB GPU; reduce `cdt.batch_size`, `cdt.max_attention_elements`
-and `restoration.batch_size` on smaller GPUs.
+[docs/method.md](docs/method.md) specifies each computation.
 
 ## Tests
 
@@ -117,10 +120,9 @@ python -m pytest -q tests
 ```
 
 The tests use tiny randomly initialised LLaVA, Idefics3 (SmolVLM) and Qwen3-VL models and need no downloads. They
-check that the CD-T decomposition reproduces the native forward pass of each architecture, that restoration effects
-equal an explicit single-head patch and do not depend on batching, that counterfactual draws are deterministic and
-change only the visual input, that patching affects only the prefill during generation, the bound constants used in
-the paper, and the COCO object extraction.
+check that the CD-T decomposition reproduces the native forward pass, that donor mixing interpolates the projected
+tokens (and DeepStack features) exactly and is batch-consistent, the donor rule and $u$ draws, that restoration effects
+equal an explicit single-head patch, that patching touches only the prefill, and the bound constants.
 
 ## Repository structure
 
@@ -128,23 +130,22 @@ the paper, and the COCO object extraction.
 mechanistic-counterfactual-grounding/
 ├── mcg/                          # method implementation
 │   ├── models.py                 # native VLM adapter: LLaVA, Qwen3-VL, SmolVLM
-│   ├── counterfactuals.py        # latent counterfactuals  G_phi(E_v(I) + alpha z)      (Eq. 1)
+│   ├── counterfactuals.py        # CVL donor mixing (Eq. 1), donor pool, Beta draws
 │   ├── tasks.py                  # POPE / HallusionBench / COCO, answers y, retention rule
 │   ├── background.py             # background mean activations
-│   ├── cdt.py                    # CD-T decomposition and per-head scores              (App. C)
-│   ├── circuits.py               # iterative circuit search and selection strategies
-│   ├── restoration.py            # restoration effects                                 (Eq. 2)
-│   ├── patching.py               # oracle-assisted patching, mean ablation
-│   ├── bounds.py                 # Bernstein, plug-in, empirical-Bernstein budgets      (Eqs. 3-5)
-│   ├── stats.py                  # Wilson intervals, bootstrap, rank test, AUROC, matching
-│   └── pipeline.py               # Algorithm 1 for one example
-├── experiments/                  # steps 01-06 (see above)
-├── configs/paper.yaml            # all experimental settings
+│   ├── cdt.py, circuits.py       # CD-T decomposition and circuit search (App. D, E)
+│   ├── restoration.py            # restoration effects (Eq. 3)
+│   ├── patching.py               # oracle patch, mean ablation
+│   ├── bounds.py, report.py      # budgets (Eq. 4, App. A), Tables 2-6
+│   ├── stats.py                  # Wilson, bootstrap (clustered), Mann-Whitney, AUROC, matching
+│   └── pipeline.py               # Algorithm 1 for one answer
+├── experiments/                  # steps 01-08
+├── configs/                      # paper.yaml (settings), reported.yaml (reported quantities)
 ├── scripts/                      # reproduce_paper.sh, download_data.sh
-├── docs/method.md                # implementation details
-├── tests/                        # tests on tiny models
-├── training/, methods/           # counterfactual vision-and-language (CVL) training utility
-├── statistical_experiments/      # simulations of concentration-bound behaviour
+├── training/, methods/           # CVL training (LLaVA-1.5)
+├── docs/method.md
+├── tests/
+├── statistical_experiments/      # earlier concentration-bound simulations
 ├── pyfunctions/, im_utils/       # reference CD-T implementation for non-VLM tasks
 └── assets/                       # earlier exploratory circuit analyses
 ```

@@ -1,19 +1,24 @@
-"""Step 6: every table, figure and statistic of the paper from the saved runs.
+"""Step 8: every table, figure and statistic of the paper.
 
-Reads results/<model>/<dataset>/{stability_K*.jsonl, benchmark*.jsonl,
-budget_sensitivity.json} and writes to results/paper/:
+Reads results/<model>/<dataset>/stability_K*.jsonl, results/timing.json,
+results/llava-1.5-7b/pope/budget_sensitivity.json and writes to results/paper/:
 
-  table1_retention.md             generated / retained counterfactuals          (Table 1)
-  figure2_stability_<ds>.pdf      V_i and K_bar, grounded vs hallucinated        (Figure 2)
-  stability_summary.{md,json}     group means, ratios, CIs, rank test, AUROC,
-                                  K_bar = floor + slope * V consistency check,
-                                  confidence-matched and label-free comparisons (Sec. 4.2, 6)
-  figure_stability_distributions_<ds>.pdf   per-example distributions
-  table2_correction.md            oracle-patch corrections with Wilson CIs      (Table 2)
-  table3_benchmark.md             benchmark scores before / after patching,
-                                  with corrected and newly broken counts        (Table 3)
-  figure3_budget_sensitivity.pdf  circuit-size sensitivity                      (Figure 3)
-  bound_constants.md              floor, slope, empirical-Bernstein and Hoeffding budgets
+  table1_retention.md              retained counterfactuals out of K            (Table 1)
+  table2_variance.md               group-mean V, ratio, plug-in K_bar           (Table 2)
+  table3_budget_sensitivity.md     K_bar ratio over (epsilon, B)                (Table 3)
+  table5_rules.md                  budgets under plug-in, EB and Hoeffding      (Table 5)
+  table6_audit_cost.md             counterfactuals, passes, GPU-seconds         (Table 6)
+  table7_oracle_restoration.md     oracle-patch corrections, Wilson CIs         (Table 7)
+  figure4_hoeffding_vs_bernstein   budget ratio over (epsilon, sigma^2/B^2)     (Figure 4)
+  figure5_budget_rules             budget per node versus V                     (Figure 5)
+  figure6_ratios                   hallucinated/grounded ratios per model       (Figure 6)
+  figure7_circuit_construction     circuit-size sensitivity                     (Figure 7)
+  stability_summary.{md,json}      per-example statistics, CIs, Mann-Whitney test, AUROC,
+                                   confidence-matched and label-free comparisons (Section 6)
+  bound_constants.md               floor, slope, EB and Hoeffding constants     (Section 3.4)
+
+`--source reported` recomputes Tables 2, 3, 5, 6 and Figures 4-6 from the
+quantities reported in the paper (configs/reported.yaml) instead of fresh runs.
 """
 import glob
 import json
@@ -24,6 +29,7 @@ import numpy as np
 from common import config, parser
 
 from mcg.bounds import bound_constants, example_statistics
+from mcg import report
 from mcg.models import model_label
 from mcg.stats import (auroc, bootstrap_ratio_ci, mann_whitney, match_on_confidence,
                        summarize, wilson_interval)
@@ -76,8 +82,7 @@ def stability(cfg, results, out):
     b = cfg["bounds"]
     constants = bound_constants(b["epsilon"], b["delta"], b["B"])
     summary, per_example = {}, {}
-    for model in cfg["models"]["stability"] + [m for m in cfg["models"]["patching"]
-                                                if m not in cfg["models"]["stability"]]:
+    for model in cfg["models"]["stability"]:
         for dataset in cfg["datasets"]:
             for path in sorted(glob.glob(str(results / model / dataset / "stability_K*.jsonl"))):
                 K = int(Path(path).stem.split("_K")[1])
@@ -157,8 +162,8 @@ def stability_figures(cfg, summary, per_example, out, K=50):
         unique = dict(zip(labels, handles))
         axes[0].legend(unique.values(), unique.keys(), loc="lower right", fontsize=8)
         fig.tight_layout()
-        fig.savefig(out / f"figure2_stability_{dataset}.pdf")
-        fig.savefig(out / f"figure2_stability_{dataset}.png", dpi=200)
+        fig.savefig(out / f"figure_group_means_{dataset}.pdf")
+        fig.savefig(out / f"figure_group_means_{dataset}.png", dpi=200)
         plt.close(fig)
         fig, axes = plt.subplots(1, len(keys), figsize=(2.6 * len(keys), 3), squeeze=False)
         for ax, (model, key) in zip(axes[0], keys):
@@ -208,7 +213,7 @@ def retention_table(cfg, results, out):
 
 
 def correction_table(cfg, results, out, K=50):
-    lines = ["# Table 2: hallucinated examples corrected by oracle-assisted circuit patching", "",
+    lines = ["# Table 7: oracle restoration diagnostic (hallucinated examples corrected)", "",
              "| Model | Dataset | Corrected | % | 95% Wilson CI | no retained CF | grounded kept correct |",
              "|---|---|---|---|---|---|---|"]
     rows = []
@@ -228,42 +233,8 @@ def correction_table(cfg, results, out, K=50):
             lines.append(f"| {model_label(model)} | {DATASET_LABEL[dataset]} | {fixed}/{len(hall)} | "
                          f"{100 * fixed / len(hall):.0f} | [{100 * lo:.0f}, {100 * hi:.0f}] | {no_cf} | "
                          f"{kept}/{len(grd)} |")
-    (out / "table2_correction.md").write_text("\n".join(lines) + "\n")
-    write_json(out / "table2_correction.json", rows)
-
-
-def benchmark_table(cfg, results, out):
-    rows, lines = [], ["# Table 3: benchmark scores before and after oracle-assisted circuit patching", "",
-                       "| Model | Dataset | n | Base | Patch | corrected (wrong→right) | broken (right→wrong) | "
-                       "patched items |", "|---|---|---|---|---|---|---|---|"]
-    for model in cfg["models"]["patching"]:
-        for dataset in cfg["datasets"]:
-            records = {}
-            for path in glob.glob(str(results / model / dataset / "benchmark*.jsonl")):
-                for r in read_jsonl(path):
-                    records[r["example_id"]] = r
-            if not records:
-                continue
-            recs = list(records.values())
-            if dataset == "coco":
-                base = [r["base"].get("recall") or 0.0 for r in recs]
-                patch = [r["patched"].get("recall") or 0.0 for r in recs]
-                score_b, score_p = 100 * np.mean(base), 100 * np.mean(patch)
-            else:
-                score_b = 100 * np.mean([bool(r["base"].get("correct")) for r in recs])
-                score_p = 100 * np.mean([bool(r["patched"].get("correct")) for r in recs])
-            fixed = sum(not r["base"].get("correct") and bool(r["patched"].get("correct")) for r in recs)
-            broken = sum(bool(r["base"].get("correct")) and not r["patched"].get("correct") for r in recs)
-            patched = sum(r["status"] == "patched" for r in recs)
-            rows.append({"model": model, "dataset": dataset, "n": len(recs), "base": score_b, "patch": score_p,
-                         "corrected": fixed, "broken": broken, "patched_items": patched,
-                         "status_counts": {s: sum(r["status"] == s for r in recs) for s in {r["status"] for r in recs}}})
-            lines.append(f"| {model_label(model)} | {DATASET_LABEL[dataset]} | {len(recs)} | {score_b:.1f} | "
-                         f"{score_p:.1f} | {fixed} | {broken} | {patched} |")
-    lines += ["", "POPE and HallusionBench: accuracy (%). COCO: context recall R_ctx (%); "
-              "for COCO, corrected/broken refer to hallucination-free captions."]
-    (out / "table3_benchmark.md").write_text("\n".join(lines) + "\n")
-    write_json(out / "table3_benchmark.json", rows)
+    (out / "table7_oracle_restoration.md").write_text("\n".join(lines) + "\n")
+    write_json(out / "table7_oracle_restoration.json", rows)
 
 
 def budget_figure(cfg, results, out):
@@ -289,8 +260,8 @@ def budget_figure(cfg, results, out):
         ax.grid(ls=":", alpha=0.6)
     axes[0].legend(fontsize=8)
     fig.tight_layout()
-    fig.savefig(out / "figure3_budget_sensitivity.pdf")
-    fig.savefig(out / "figure3_budget_sensitivity.png", dpi=200)
+    fig.savefig(out / "figure7_circuit_construction.pdf")
+    fig.savefig(out / "figure7_circuit_construction.png", dpi=200)
     plt.close(fig)
 
 
@@ -302,21 +273,144 @@ def constants_table(cfg, out):
     (out / "bound_constants.md").write_text("\n".join(lines) + "\n")
 
 
+def budget_inputs(cfg, results, per_example, source, K):
+    """Group-mean V, K=50 retention rate and timings per model (from runs or the paper)."""
+    import yaml
+    if source == "reported":
+        rep = yaml.safe_load((Path(__file__).resolve().parents[1] / "configs" / "reported.yaml").read_text())
+        retention = {m: v[50] / 50 for m, v in rep["retained_out_of_K"].items()}
+        return rep["group_means_V"], retention, rep["timing_seconds"]
+    means, retention = {}, {}
+    for model in cfg["models"]["stability"]:
+        rows = [r for key, v in per_example.items() if key.startswith(f"{model}|") and key.endswith(f"|{K}") for r in v]
+        g = [r["V"] for r in rows if r["group"] == "grounded"]
+        h = [r["V"] for r in rows if r["group"] == "hallucinated"]
+        if g and h:
+            means[model] = {"grounded": float(np.mean(g)), "hallucinated": float(np.mean(h))}
+        recs = [r for d in cfg["datasets"] for r in read_jsonl(results / model / d / "stability_K50.jsonl")
+                if r["group"] == "hallucinated" and r.get("status") == "ok"]
+        if recs:
+            retention[model] = float(np.mean([r["num_retained"] for r in recs])) / 50
+    timing_path = results / "timing.json"
+    timing = json.loads(timing_path.read_text())["models"] if timing_path.exists() else {}
+    return means, retention, timing
+
+
+def budget_tables(cfg, means, retention, timing, out, source):
+    b = cfg["bounds"]
+    eps, delta, B = b["epsilon"], b["delta"], b["B"]
+    if not means:
+        return
+    label = {"reported": "inputs: values reported in the paper (configs/reported.yaml)", "runs": "inputs: fresh runs"}[source]
+    t2 = report.table2(means, eps, delta, B)
+    lines = ["# Table 2: mean restoration-effect variance and plug-in budget", "", label, "",
+             "| Model | V grd. | V hal. | ratio | K̄ grd. → hal. | ratio |", "|---|---|---|---|---|---|"]
+    lines += [f"| {model_label(r['model'])} | {r['V_grounded']:.3f} | {r['V_hallucinated']:.3f} | {r['V_ratio']:.1f}× | "
+              f"{r['K_grounded']:.1f} → {r['K_hallucinated']:.1f} | {r['K_ratio']:.2f}× |" for r in t2]
+    (out / "table2_variance.md").write_text("\n".join(lines) + "\n")
+    t3 = report.table3(means, delta)
+    models = list(means)
+    lines = ["# Table 3: hallucinated-to-grounded plug-in budget ratio", "", label, "",
+             "| ε | B | " + " | ".join(model_label(m) for m in models) + " |", "|---|---|" + "---|" * len(models)]
+    lines += [f"| {r['epsilon']:.3f} | {r['B']:.1f} | " + " | ".join(f"{r[m]:.2f}" for m in models) + " |" for r in t3]
+    (out / "table3_budget_sensitivity.md").write_text("\n".join(lines) + "\n")
+    t5 = report.table5(means, eps, delta, B)
+    lines = ["# Table 5: counterfactuals per node, grounded/hallucinated, under each rule", "", label, "",
+             "| Rule | " + " | ".join(model_label(m) for m in models) + " |", "|---|" + "---|" * len(models)]
+    for rule, values in t5.items():
+        cells = [f"{values[m][0]:.1f}" if rule == "Hoeffding" else
+                 "/".join(f"{x:.1f}" if isinstance(x, float) else str(x) for x in values[m]) for m in models]
+        lines.append(f"| {rule} | " + " | ".join(cells) + " |")
+    (out / "table5_rules.md").write_text("\n".join(lines) + "\n")
+    t6 = []
+    if all(m in retention and m in timing for m in models):
+        t6 = report.table6(means, retention, timing, eps, delta, B)
+        lines = ["# Table 6: cost of auditing one answer at its plug-in budget", "", label, "",
+                 "| Model | K | gen. | seqs | TF passes (|S|=20/50) | GPU-s hal. | GPU-s grd. |", "|---|---|---|---|---|---|---|"]
+        for r in t6:
+            h, g = r["hallucinated"], r["grounded"]
+            lines.append(f"| {model_label(r['model'])} | {h['K']} | {h['generated']} | {h['sequences']} | "
+                         f"{h['tf_passes'][0]}/{h['tf_passes'][1]} | {h['gpu_seconds'][0]:.0f}/{h['gpu_seconds'][1]:.0f} | "
+                         f"{g['gpu_seconds'][0]:.0f}/{g['gpu_seconds'][1]:.0f} |")
+        (out / "table6_audit_cost.md").write_text("\n".join(lines) + "\n")
+    write_json(out / "budget_tables.json", {"source": source, "means": means, "retention": retention,
+                                            "table2": t2, "table3": t3, "table5": t5, "table6": t6})
+    budget_figures(means, eps, delta, B, out)
+
+
+def budget_figures(means, eps, delta, B, out):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from mcg.bounds import eb_budget
+    markers = ["o", "s", "^", "D"]
+    # Figure 4
+    E = np.logspace(-2, np.log10(0.3), 200)
+    R = np.logspace(-3, np.log10(0.25), 200)
+    Z = np.log10([[report.hoeffding_bernstein_ratio(e, r, delta) for e in E] for r in R])
+    fig, ax = plt.subplots(figsize=(5, 4))
+    lim = np.abs(Z).max()
+    mesh = ax.pcolormesh(E, R, Z, cmap="RdBu", vmin=-lim, vmax=lim, shading="auto")
+    cs = ax.contour(E, R, Z, levels=[0, np.log10(2), np.log10(5)], colors="k", linewidths=0.8)
+    ax.clabel(cs, fmt={0: "1×", np.log10(2): "2×", np.log10(5): "5×"}, fontsize=7)
+    for (model, m), mk in zip(means.items(), markers):
+        ax.scatter([eps], [m["grounded"] / B ** 2], marker=mk, facecolors="none", edgecolors="k")
+        ax.scatter([eps], [m["hallucinated"] / B ** 2], marker=mk, color="k")
+    ax.set_xscale("log"); ax.set_yscale("log")
+    ax.set_xlabel("tolerance ε"); ax.set_ylabel("σ²/B²")
+    fig.colorbar(mesh, label="log10(K_Hoeff / K_Bern)")
+    fig.tight_layout(); fig.savefig(out / "figure4_hoeffding_vs_bernstein.pdf"); fig.savefig(out / "figure4_hoeffding_vs_bernstein.png", dpi=200)
+    plt.close(fig)
+    # Figure 5
+    V = np.linspace(0, 0.09, 200)
+    fig, ax = plt.subplots(figsize=(5, 3.6))
+    ax.plot(V, [report.plugin(v, eps, delta, B) for v in V], "-", color="k", label="plug-in Bernstein (used)")
+    ax.plot(V, [eb_budget(v, eps, delta, B) for v in V], "--", color="k", label="empirical Bernstein (one-sided)")
+    ax.plot(V, [B ** 2 * np.log(2 / delta) / (2 * eps ** 2)] * len(V), ":", color="k", label="Hoeffding")
+    for (model, m), mk in zip(means.items(), markers):
+        ax.scatter([m["grounded"]], [report.plugin(m["grounded"], eps, delta, B)], marker=mk, facecolors="none",
+                   edgecolors="#2b6cb0", label=model_label(model))
+        ax.scatter([m["hallucinated"]], [report.plugin(m["hallucinated"], eps, delta, B)], marker=mk, color="#c53030")
+    ax.set_xlabel("mean circuit variance V"); ax.set_ylabel("counterfactuals per node"); ax.legend(fontsize=7)
+    fig.tight_layout(); fig.savefig(out / "figure5_budget_rules.pdf"); fig.savefig(out / "figure5_budget_rules.png", dpi=200)
+    plt.close(fig)
+    # Figure 6
+    models = list(means)
+    var_ratio = [means[m]["hallucinated"] / means[m]["grounded"] for m in models]
+    plug_ratio = [report.plugin(means[m]["hallucinated"], eps, delta, B) / report.plugin(means[m]["grounded"], eps, delta, B) for m in models]
+    eb_ratio = [eb_budget(means[m]["hallucinated"], eps, delta, B) / eb_budget(means[m]["grounded"], eps, delta, B) for m in models]
+    fig, ax = plt.subplots(figsize=(5.5, 3.4))
+    x = range(len(models))
+    ax.plot(x, var_ratio, "o-", label="variance ratio")
+    ax.plot(x, plug_ratio, "s-", label="plug-in K̄ ratio")
+    ax.plot(x, eb_ratio, "^--", label="emp. Bernstein ratio (approx.)")
+    for i, v in enumerate(var_ratio):
+        ax.annotate(f"{v:.1f}×", (i, v), textcoords="offset points", xytext=(0, 5), ha="center", fontsize=7)
+    ax.set_xticks(list(x), [model_label(m) for m in models], fontsize=7)
+    ax.set_ylabel("hallucinated / grounded"); ax.axhline(1, color="0.6", lw=0.8, ls=":"); ax.legend(fontsize=7)
+    fig.tight_layout(); fig.savefig(out / "figure6_ratios.pdf"); fig.savefig(out / "figure6_ratios.png", dpi=200)
+    plt.close(fig)
+
+
 def main():
     p = parser(__doc__, model=False, dataset=False)
-    p.add_argument("--K", type=int, default=50, help="counterfactual pool used for Figure 2 and Table 2")
+    p.add_argument("--K", type=int, default=50, help="counterfactual pool behind V and Table 7")
+    p.add_argument("--source", choices=["runs", "reported"], default="runs",
+                   help="inputs for Tables 2, 3, 5, 6 and Figures 4-6")
+    p.add_argument("--out", default=None, help="output directory (default results/paper, or "
+                                               "results/paper/from_reported with --source reported)")
     args = p.parse_args()
     cfg = config(args)
     results = Path(args.results)
-    out = results / "paper"
+    out = Path(args.out) if args.out else results / "paper" / ("from_reported" if args.source == "reported" else "")
     out.mkdir(parents=True, exist_ok=True)
     constants_table(cfg, out)
     summary, per_example = stability(cfg, results, out)
     stability_figures(cfg, summary, per_example, out, K=args.K)
     retention_table(cfg, results, out)
     correction_table(cfg, results, out, K=args.K)
-    benchmark_table(cfg, results, out)
     budget_figure(cfg, results, out)
+    budget_tables(cfg, *budget_inputs(cfg, results, per_example, args.source, args.K), out, args.source)
     print(f"Wrote tables and figures to {out}")
 
 

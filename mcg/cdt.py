@@ -1,4 +1,4 @@
-"""Contextual decomposition for transformers (CD-T), Appendix C.
+"""Contextual decomposition for transformers (CD-T), Appendix D.
 
 Every activation is split as x = beta + gamma (relevant / irrelevant) and both
 parts are propagated through the native decoder geometry captured on the
@@ -211,7 +211,7 @@ def answer_direction(vlm, target_id, contrast_id=None):
 
 @torch.no_grad()
 def sweep(vlm, ctx, means, answer_pos, direction, batch_size=16, progress=None, max_attention_elements=1e9):
-    """CD-T scores of every head as a source (Appendix C, step 1-2 inputs).
+    """CD-T scores of every head as a source (Appendix D, step 1-2 inputs).
 
     The source batch shrinks for long sequences so that one attention-score
     tensor (batch x heads x S x S) stays below `max_attention_elements`.
